@@ -1,77 +1,86 @@
 # 🤖 Synthetic Reconbot Mechanism using Adaptive Learning
 
-Welcome to the **Synthetic Reconbot Mechanism** project! This repository showcases an innovative AI-powered system designed to revolutionize cybersecurity and artificial intelligence by integrating multiple functionalities seamlessly. This project serves as a testament to practical problem-solving using Python and Flask while emphasizing real-world applications.
+Welcome to the **Synthetic Reconbot Mechanism** project! This repository presents a cutting-edge AI-powered solution that effortlessly integrates several functionalities to transform artificial intelligence and cybersecurity. This project emphasizes real-world applications, while demonstrating how to solve problems practically with Flask and Python.
 
 ---
 
 ## 🚀 Project Overview
 
-The **Synthetic Reconbot Mechanism** is a robust solution that combines the strengths of artificial intelligence and adaptive learning to tackle complex cybersecurity and automation challenges. The project includes several interconnected components that provide unique capabilities, from file scanning to AI-driven insights.
+The **Synthetic Reconbot Mechanism using adaptive learning**, also known as **INFOSIGHT**, is a robust solution that combines the strengths of artificial intelligence and adaptive learning to tackle complex cybersecurity and automation challenges. The project includes several interconnected components that provide unique capabilities, from file scanning to AI-driven insights.
 
 ---
 
 ## 📂 Project Structure
 
-- **HTML Templates**: All frontend HTML files are organized under the `templates` folder, making it easy to manage and modify the user interface.
-- **Python Program Files**: The core backend logic is implemented in Python, housed in the `python program files` folder.
+- **HTML Templates**: All front-end HTML files are organized under the `templates` folder, making it easy to manage and modify the user interface.
+- **Python Program Files**: The core back-end logic is implemented in Python, housed in the `python program files` folder.
+- **Import all necessary packages**: Type `pip install -r requiremnets.txt` in terminal to import all necessary packages.
 - **Execution**: To run the project, move all files to the root directory and execute the server using `python server.py`.
 
 ---
 
 ## 🛠️ Features and Functionalities
 
-### 1. **FileFender** 🛡️
-A powerful file-scanning tool that integrates with VirusTotal API to:
-- Scan files for malware and suspicious content.
-- Calculate a risk score based on malicious and suspicious detections.
-- Provide a detailed analysis report for the scanned files.
-
-### 2. **InfoSight AI** 🧠
+### 1. 🧠 **InfoSight AI** 
 An AI-powered module leveraging advanced natural language processing and image generation capabilities. Features include:
 - **Text Generation**: Generates clear, professional content about any topic using the Gemini LLM.
 - **Image Generation**: Produces high-quality visual representations using Hugging Face's Stable Diffusion model.
 - **Combined Generation**: Offers both text and image outputs for comprehensive insights.
 
-### 3. **Webseeker** 🌐
-A web crawler module that extracts and indexes critical information from specified URLs, enabling:
-- Efficient information gathering for research and analysis.
-- Customizable crawling parameters for focused data extraction.
+### 2. 🎙️ **LANA AI** 
+A speech-to-text and text-to-speech system that:
+- It is a voice-assistant similar to Iphone's SIRI.
+- Transcribes audio input into text with high accuracy.
+- Converts text into natural-sounding speech for accessibility.
 
-### 4. **InfoCrypt** 🔒
-A data encryption and decryption tool designed for secure communication and storage, featuring:
+### 3. 🔒 **InfoCrypt** 
+A data encryption and decryption tool designed for secure communication and featuring:
 - Support for multiple encryption algorithms.
 - User-friendly interface for managing cryptographic operations.
+- has multiple hashing and encryption algorithms.
 
-### 5. **TrackyLst** 📊
-A tracking and monitoring system for:
-- Real-time analysis of system or network activity.
-- Generating actionable insights to improve system security.
+### 4. 🛡️ **FileFender** 
+A powerful file-scanning tool that integrates with VirusTotal API to:
+- Scan files for malware and suspicious content.
+- Calculate a risk score based on malicious and suspicious detections.
+- Provide a detailed analysis report for the scanned files.
 
-### 6. **CyberSentry AI** 🔍
-An intelligent tool to:
-- Identify and log cybersecurity threats.
-- Offer actionable suggestions to mitigate risks.
-
-### 7. **PortScanner** 🛠️
+### 5. 🛠️ **PortScanner** 
 A lightweight tool to:
 - Scan open ports on a network.
 - Provide a detailed analysis of potential vulnerabilities.
 
-### 8. **Site Index** 🌎
+### 6. 👾 **SNAPSPEAK AI** 
+An Image Analysis tool that:
+- gives a description of the image.
+- analyze stenography in image.
+- analyze dominant colors in the image.
+- extracts possible EXIF data from the image.
+- gives process time for overall process
+
+### 7. 📊 **CyberSentry AI** 
+An intelligent tool to:
+- It is a GPT specially designed for Cybersecurity.
+- answer all cybersecurity related queries.
+- gives commands for many tools.
+
+### 8. 🔍 **TrackyLst** 
+A tracking system for:
+- User needs to enter name.
+- results will be fetched from multiple social media platforms.
+- The results may or may not be accurate, because multiple users have a similar name.
+
+### 9. 🌎**Site Index** 
 A utility for indexing and mapping website content, allowing:
 - Easy navigation of website structures.
 - Enhanced search engine optimization (SEO) insights.
 
-### 9. **SnapSpeak AI** 🎙️
-A speech-to-text and text-to-speech system that:
-- Transcribes audio input into text with high accuracy.
-- Converts text into natural-sounding speech for accessibility.
-
-### 10. **FileFender** 🗂️
-A file management system designed to:
-- Organize and manage files efficiently.
-- Ensure secure file handling and processing.
-
+### 10. 🌐 **Webseeker** 
+A web crawler module that extracts and indexes critical information from specified URLs, enabling:
+- The user needs to enter domain name or URL
+- then, want to select scan type
+- User will get the IP address, scan result, SSL certificate details and much more details.
+  
 ---
 
 ## 🔧 How to Run the Project
