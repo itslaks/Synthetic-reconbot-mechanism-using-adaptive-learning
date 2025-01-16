@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lana AI Assistant</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            background-image: url('Download free image of Purple 3D abstract wave pattern background by Aew about abstract mobile wallpapers, background tecnology, vaporwave, 80s, and synthwave grid 2421001.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            font-size: 0;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            min-height: 20%;
+            max-height: 100%;
+            padding: 0;
+            margin-bottom: 100px;
+            position: absolute;
+        }
+
+        .gradient {
+            margin-bottom: 100px;
+        }
+
+        .blur-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1;
+        }
+
+        .center-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: purple;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: sans-serif;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            margin: 0;
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+            -moz-transition: opacity 1s ease-in-out;
+            -webkit-transition: opacity 1s ease-in-out;
+        }
+
+        #start-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #48b1f4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #start-button:hover {
+            background-color: #36a2b1;
+        }
+
+        #response {
+            margin-top: 20px;
+            font-size: 18px;
+            color: white;
+        }
+
+        path {
+            stroke-linecap: square;
+            stroke: white;
+            stroke-width: 0.5px;
+        }
+
+        @keyframes show {
+            0% {
+                filter: blur(5px);
+                transform: translateY(calc(-50% + 75px));
+            }
+            100% {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        #checkbox {
+            display: none;
+        }
+
+        switch {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            background-color: rgb(99, 99, 99);
+            border-radius: 50%;
+            z-index: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgb(126, 126, 126);
+            box-shadow: 0px 0px 3px rgb(2, 2, 2) inset;
+        }
+
+        .switch svg {
+            width: 1.2em;
+        }
+
+        .switch svg path {
+            fill: rgb(48, 48, 48);
+        }
+
+        #checkbox:checked + .switch {
+            box-shadow: 0px 0px 1px rgb(151, 243, 255) inset,
+                0px 0px 2px rgb(151, 243, 255) inset, 0px 0px 10px rgb(151, 243, 255) inset,
+                0px 0px 40px rgb(151, 243, 255), 0px 0px 100px rgb(151, 243, 255),
+                0px 0px 5px rgb(151, 243, 255);
+            border: 2px solid rgb(255, 255, 255);
+            background-color: rgb(146, 180, 184);
+        }
+
+        #checkbox:checked + .switch svg {
+            filter: drop-shadow(0px 0px 5px rgb(151, 243, 255));
+        }
+
+        #checkbox:checked + .switch svg path {
+            fill: rgb(255, 255, 255);
+        }
+    </style>
+</head>
+<body>
+    <svg preserveAspectRatio="none" id="visualizer" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+            <mask id="mask">
+                <g id="maskGroup"></g>
+            </mask>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#ff0a0a;stop-opacity:1" />
+                <stop offset="20%" style="stop-color:#f1ff0a;stop-opacity:1" />
+                <stop offset="70%" style="stop-color:#d923b9;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#050d61;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="100%" height="100%" fill="url(#gradient)" mask="url(#mask)"></rect>
+    </svg>
+    
+    <div class="blur-layer">
+        <div class="center-container">
+            <button id="start-button">Start Listening</button>
+            <div id="response"></div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+    "use strict";
+    var paths = document.getElementsByTagName('path');
+    var visualizer = document.getElementById('visualizer');
+    var mask = visualizer.getElementById('mask');
+    var h = document.getElementById('response');
+    var path;
+    var audioContent, audioStream, analyser, frequencyArray;
+    var isListening = false;
+    var streamRef;
+    var fetchTranscriptionTimeout;
+
+    var recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+    recognition.onstart = function () {
+        document.getElementById('start-button').textContent = "Stop Listening";
+    };
+
+    recognition.onresult = function (event) {
+        var transcript = event.results[0][0].transcript;
+        console.log("You said: ", transcript);
+        h.innerHTML = "You said: " + transcript;
+    };
+
+    recognition.onerror = function (event) {
+        console.error("Speech recognition error", event.error);
+        h.innerHTML = "Error occurred: " + event.error;
+    };
+
+    recognition.onend = function () {
+        if (isListening) {
+            recognition.start();
+        } else {
+            document.getElementById('start-button').textContent = "Start Listening";
+        }
+    };
+
+    var soundAllowed = function (stream) {
+        window.persistAudioStream = stream;
+        streamRef = stream;
+        audioContent = new AudioContext();
+        audioStream = audioContent.createMediaStreamSource(stream);
+        analyser = audioContent.createAnalyser();
+        audioStream.connect(analyser);
+        analyser.fftSize = 1024;
+
+        frequencyArray = new Uint8Array(analyser.frequencyBinCount);
+        visualizer.setAttribute('viewBox', '0 0 255 255');
+
+        for (var i = 0; i < 255; i++) {
+            path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('stroke-dasharray', '4,1');
+            mask.appendChild(path);
+        }
+
+        var doDraw = function () {
+            if (!isListening) return;
+            requestAnimationFrame(doDraw);
+            analyser.getByteFrequencyData(frequencyArray);
+            var adjustedLength;
+            for (var i = 0; i < 255; i++) {
+                adjustedLength = Math.floor(frequencyArray[i]) - (Math.floor(frequencyArray[i]) % 5);
+                paths[i].setAttribute('d', 'M ' + (i) + ',255 l 0,-' + adjustedLength);
+            }
+        };
+        doDraw();
+    };
+
+    var soundNotAllowed = function (error) {
+        h.innerHTML = "Microphone access denied";
+        console.log(error);
+    };
+
+    var gator = window.navigator || {};
+    gator.getUserMedia = navigator.getUserMedia ||
+                         navigator.webkitGetUserMedia ||
+                         navigator.mozGetUserMedia ||
+                         null;
+
+    document.getElementById('start-button').addEventListener('click', function () {
+        if (!isListening) {
+            gator.getUserMedia({audio: true}, function (stream) {
+                soundAllowed(stream);
+                recognition.start();
+            }, soundNotAllowed);
+        } else {
+            recognition.stop();
+            if (audioContent) {
+                audioContent.close();
+            }
+            if (streamRef) {
+                streamRef.getTracks().forEach(track => track.stop());
+            }
+        }
+        isListening = !isListening;
+    });
+
+    function fetchResponse() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/voice_assistant/process_audio', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        document.getElementById('response').innerHTML = "You said: " + response.user_transcript + "<br>" + response.response;
+                    } else {
+                        document.getElementById('response').innerText = response.message || 'Error processing audio';
+                    }
+                } else {
+                    document.getElementById('response').innerText = 'Failed to fetch response';
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    // Periodically check for updates
+    function startFetchingTranscription() {
+        fetchResponse();
+        fetchTranscriptionTimeout = setTimeout(startFetchingTranscription, 3000); // Check every 3 seconds
+    }
+
+    function stopFetchingTranscription() {
+        clearTimeout(fetchTranscriptionTimeout);
+    }
+
+    // Start or stop fetching transcription based on listening state
+    function updateFetchingState() {
+        if (isListening) {
+            startFetchingTranscription();
+        } else {
+            stopFetchingTranscription();
+        }
+    }
+
+    document.getElementById('start-button').addEventListener('click', updateFetchingState);
+};
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SITE INDEX</title>
+    <style>
+        :root {
+            --primary: #00ffff;
+            --secondary: #ff00ff;
+            --dark: #0d1117;
+            --light: #c9d1d9;
+            --accent: #58a6ff;
+        }
+        body {
+            background-color: var(--dark);
+            font-family: 'Roboto', sans-serif;
+            color: var(--light);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(22, 27, 34, 0.8);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.2), 0 0 50px rgba(255, 0, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 3rem;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+        .search-container input {
+            width: 75%;
+            padding: 1rem;
+            font-size: 1.2rem;
+            background-color: rgba(22, 27, 34, 0.6);
+            border: 2px solid var(--secondary);
+            border-radius: 5px;
+            color: var(--light);
+            transition: all 0.3s ease;
+        }
+        .search-container input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+        }
+        button {
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: var(--dark);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4), 0 5px 15px rgba(255, 0, 255, 0.4);
+        }
+        #result-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        #result, #definition {
+            padding: 1.5rem;
+            background-color: rgba(22, 27, 34, 0.6);
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            color: var(--light);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1), 0 0 20px rgba(255, 0, 255, 0.1);
+            overflow: auto;
+            max-height: 500px;
+        }
+        #definition {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1.1rem;
+        }
+        .loading {
+            color: var(--primary);
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        .key {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .value {
+            color: var(--secondary);
+        }
+        .definition-key {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        .definition-value {
+            color: var(--light);
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .section-title {
+            color: var(--accent);
+            font-size: 1.4rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 0.3rem;
+        }
+        .nested-content {
+            margin-left: 1rem;
+            border-left: 2px solid var(--secondary);
+            padding-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SITE INDEX </h1>
+        <div class="search-container">
+            <input type="text" id="input" placeholder="Enter URL or domain">
+            <button onclick="scan()">Analyze</button>
+        </div>
+        <div id="result-container">
+            <div id="result"></div>
+            <div id="definition"></div>
+        </div>
+    </div>
+
+    <script>
+        async function scan() {
+    const query = document.getElementById('input').value.trim();
+    const resultDiv = document.getElementById('result');
+    const definitionDiv = document.getElementById('definition');
+    
+    if (!query) {
+        resultDiv.innerHTML = '<span class="error">Please enter a valid domain.</span>';
+        definitionDiv.innerHTML = '';
+        return;
+    }
+
+    resultDiv.innerHTML = '<p class="loading">Analyzing domain security and DNS records...</p>';
+    definitionDiv.innerHTML = '';
+
+    try {
+        const response = await fetch('/enscan/api/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: query })
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        if (data.error) {
+            resultDiv.innerHTML = `<span class="error">${data.error}</span>`;
+            return;
+        }
+
+        displayResults(data, resultDiv);
+        displayDefinitions(definitionDiv);
+    } catch (error) {
+        resultDiv.innerHTML = `<span class="error">Analysis failed: ${error.message}</span>`;
+        definitionDiv.innerHTML = '';
+    }
+}
+
+function displayResults(data, resultDiv) {
+    let content = '<div class="results-container">';
+
+    // Domain Info Section
+    if (data.domain_info) {
+        content += createSection('Domain Information', formatDomainInfo(data.domain_info));
+    }
+
+    // SSL Info Section
+    if (data.ssl_info) {
+        content += createSection('SSL Certificate', formatSSLInfo(data.ssl_info));
+    }
+
+    // Security Headers Section
+    if (data.security_headers) {
+        content += createSection('Security Headers', formatSecurityHeaders(data.security_headers));
+    }
+
+    // Email Security Section
+    if (data.email_security) {
+        content += createSection('Email Security', formatEmailSecurity(data.email_security));
+    }
+
+    // DNS Records Section
+    const dnsRecords = ['A', 'AAAA', 'NS', 'MX', 'TXT', 'SOA', 'CNAME', 'PTR', 'SRV']
+        .filter(type => data[type])
+        .map(type => `<div class="record-type">
+            <strong>${type} Record${Array.isArray(data[type]) ? 's' : ''}</strong>
+            <div class="record-value">${formatDNSRecord(data[type])}</div>
+        </div>`).join('');
+
+    if (dnsRecords) {
+        content += createSection('DNS Records', dnsRecords);
+    }
+
+    content += '</div>';
+    resultDiv.innerHTML = content;
+}
+
+function formatDNSRecord(record) {
+    if (Array.isArray(record)) {
+        return record.map(r => `<div>${r}</div>`).join('');
+    }
+    return `<div>${record}</div>`;
+}
+
+function formatDomainInfo(info) {
+    return Object.entries(info)
+        .filter(([_, value]) => value)
+        .map(([key, value]) => `
+            <div class="info-row">
+                <span class="info-label">${formatLabel(key)}:</span>
+                <span class="info-value">${Array.isArray(value) ? value.join(', ') : value}</span>
+            </div>
+        `).join('');
+}
+
+function formatSSLInfo(info) {
+    if (info.error) return `<div class="error">${info.error}</div>`;
+    
+    return `
+        <div class="info-row">
+            <span class="info-label">Issuer:</span>
+            <span class="info-value">${info.issuer.CN || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Expires:</span>
+            <span class="info-value">${info.expires}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Version:</span>
+            <span class="info-value">${info.version}</span>
+        </div>
+    `;
+}
+
+function formatSecurityHeaders(headers) {
+    return Object.entries(headers)
+        .map(([header, value]) => `
+            <div class="info-row">
+                <span class="info-label">${header}:</span>
+                <span class="info-value ${value === 'Not set' ? 'warning' : ''}">${value}</span>
+            </div>
+        `).join('');
+}
+
+function formatEmailSecurity(security) {
+    return `
+        <div class="info-row">
+            <span class="info-label">SPF:</span>
+            <span class="info-value">${security.spf_record}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">DMARC:</span>
+            <span class="info-value">${security.dmarc_record}</span>
+        </div>
+    `;
+}
+
+function createSection(title, content) {
+    return `
+        <div class="section">
+            <div class="section-title">${title}</div>
+            <div class="section-content">${content}</div>
+        </div>
+    `;
+}
+
+function displayDefinitions(definitionDiv) {
+    const definitions = {
+        "Domain Information": "Basic details about domain registration and ownership",
+        "SSL Certificate": "Security certificate details for encrypted connections",
+        "Security Headers": "HTTP headers that enhance website security",
+        "Email Security": "Email authentication and security configurations",
+        "A": "IPv4 address record",
+        "AAAA": "IPv6 address record",
+        "CNAME": "Canonical name record for domain aliases",
+        "MX": "Mail exchange servers",
+        "NS": "Authoritative name servers",
+        "PTR": "Pointer record for reverse DNS",
+        "SOA": "Start of Authority record",
+        "TXT": "Text records for various purposes",
+        "SRV": "Service location records"
+    };
+
+    definitionDiv.innerHTML = `
+        <div class="section-title">Record Types Explanation</div>
+        ${Object.entries(definitions)
+            .map(([key, value]) => `
+                <div class="definition-item">
+                    <span class="definition-key">${key}:</span>
+                    <span class="definition-value">${value}</span>
+                </div>
+            `).join('')}
+    `;
+}
+
+function formatLabel(str) {
+    return str.split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+    </script>
+</body>
+</html>

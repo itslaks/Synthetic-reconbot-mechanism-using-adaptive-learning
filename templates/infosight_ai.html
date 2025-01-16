@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> INFOSIGHT_AI </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00ffd5;
+            --primary-dark: #00b3a1;
+            --secondary: #1a1a1a;
+            --text: #ffffff;
+            --background: #0a0a0a;
+            --card-bg: #141414;
+            --hover: #00ffdd3d;
+            --error: #ff4444;
+            --success: #00ff88;
+            --warning: #ffbb00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 255, 213, 0.1);
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(0, 255, 213, 0.3);
+        }
+
+        .header p {
+            color: var(--text);
+            opacity: 0.8;
+        }
+
+        /* Menu Styles */
+        .menu {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .menu-btn {
+            background: var(--card-bg);
+            color: var(--text);
+            border: 2px solid var(--primary-dark);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .menu-btn:hover {
+            background: var(--hover);
+            transform: translateY(-2px);
+        }
+
+        .menu-btn.active {
+            background: var(--primary);
+            color: var(--secondary);
+        }
+
+        /* Input Section */
+        .input-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        #prompt-input {
+            width: 100%;
+            padding: 1rem;
+            background: var(--secondary);
+            border: 2px solid var(--primary-dark);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        #prompt-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .character-count {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 1rem;
+            color: var(--text);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        /* Button Styles */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--secondary);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--text);
+            border: 1px solid var(--primary-dark);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 213, 0.2);
+        }
+
+        /* Output Section */
+        .output-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .output-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            background: var(--secondary);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .card-btn {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .card-btn:hover {
+            background: var(--hover);
+            color: var(--primary);
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* Generated Content Styles */
+        #generated-text {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        #generated-image {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        #generated-image:hover {
+            transform: scale(1.02);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90vh;
+        }
+
+        .modal img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 213, 0.2);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .close-modal:hover {
+            transform: scale(1.2);
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .loader {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+
+        .loader:before,
+        .loader:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--primary);
+            opacity: 0.6;
+            animation: pulse 2s ease-out infinite;
+        }
+
+        .loader:after {
+            animation-delay: 1s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .loading-text {
+            color: var(--primary);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px var(--primary), 0 0 10px var(--primary);
+            }
+            to {
+                text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+            }
+        }
+
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: var(--secondary);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.error {
+            background: var(--error);
+        }
+
+        .notification.warning {
+            background: var(--warning);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .menu-btn {
+                padding: 0.8rem 1.5rem;
+            }
+
+            .input-section {
+                padding: 1rem;
+            }
+
+            .output-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-robot"></i> INFOSIGHT_AI </h1>
+            <p>Create amazing content with the power of AI</p>
+        </header>
+
+        <div class="menu">
+            <button class="menu-btn active" data-mode="text">
+                <i class="fas fa-font"></i> Text
+            </button>
+            <button class="menu-btn" data-mode="image">
+                <i class="fas fa-image"></i> Image
+            </button>
+            <button class="menu-btn" data-mode="both">
+                <i class="fas fa-clone"></i> Both
+            </button>
+        </div>
+
+        <div class="input-section">
+            <div class="input-wrapper">
+                <textarea id="prompt-input" placeholder="Enter your prompt here..."></textarea>
+                <div class="character-count">0/1000</div>
+            </div>
+            <div class="button-group">
+                <button id="generate-btn" class="btn btn-primary">
+                    <i class="fas fa-magic"></i> Generate
+                </button>
+                <button id="clear-btn" class="btn btn-secondary">
+                    <i class="fas fa-trash"></i> Clear
+                </button>
+                <button id="save-prompt-btn" class="btn btn-secondary">
+                    <i class="fas fa-save"></i> Save Prompt
+                </button>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <div id="text-output" class="output-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-font"></i> Generated Text</h3>
+                    <div class="card-actions">
+                        <button id="copy-text" class="card-btn" title="Copy to clipboard">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button id="download-text" class="card-btn" title="Download as file">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="generated-text"></div>
+                </div>
+            </div>
+
+            <div id="image-output" class="output-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-image"></i> Generated Image</h3>
+                    <div class="card-actions">
+                        <button id="download-image" class="card-btn" title="Download image">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button id="fullscreen-image" class="card-btn" title="View fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <img id="generated-image" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="Generated image">
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay">
+        <div class="loader"></div>
+        <div class="loading-text">Creating something amazing...</div>
+    </div>
+
+    <div id="image-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modal-image" src="" alt="Fullscreen Image">
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const API_ENDPOINT = '/infosight_ai'; // Updated to include blueprint prefix
+            
+            const state = {
+                currentMode: 'text',
+                savedPrompts: JSON.parse(localStorage.getItem('savedPrompts') || '[]')
+            };
+        
+            // Elements
+            const menuBtns = document.querySelectorAll('.menu-btn');
+            const generateBtn = document.getElementById('generate-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const savePromptBtn = document.getElementById('save-prompt-btn');
+            const promptInput = document.getElementById('prompt-input');
+            const textOutput = document.getElementById('text-output');
+            const imageOutput = document.getElementById('image-output');
+            const generatedText = document.getElementById('generated-text');
+            const generatedImage = document.getElementById('generated-image');
+            const loadingOverlay = document.querySelector('.loading-overlay');
+            const characterCount = document.querySelector('.character-count');
+        
+            // Event Listeners
+            menuBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    menuBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.currentMode = btn.dataset.mode;
+                    updateUI();
+                });
+            });
+        
+            generateBtn.addEventListener('click', handleGeneration);
+            clearBtn.addEventListener('click', clearOutputs);
+            savePromptBtn.addEventListener('click', savePrompt);
+        
+            promptInput.addEventListener('input', () => {
+                const length = promptInput.value.length;
+                characterCount.textContent = `${length}/1000`;
+                if (length > 1000) {
+                    characterCount.style.color = 'var(--error)';
+                } else {
+                    characterCount.style.color = 'var(--text)';
+                }
+            });
+        
+            // Copy and Download Handlers
+            document.getElementById('copy-text').addEventListener('click', () => {
+                navigator.clipboard.writeText(generatedText.textContent)
+                    .then(() => showNotification('Text copied to clipboard!', 'success'))
+                    .catch(() => showNotification('Failed to copy text!', 'error'));
+            });
+        
+            document.getElementById('download-text').addEventListener('click', () => {
+                try {
+                    const blob = new Blob([generatedText.textContent], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `generated-text-${new Date().toISOString()}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showNotification('Text file downloaded!', 'success');
+                } catch (error) {
+                    showNotification('Failed to download text!', 'error');
+                }
+            });
+        
+            document.getElementById('download-image').addEventListener('click', () => {
+                try {
+                    const a = document.createElement('a');
+                    a.href = generatedImage.src;
+                    a.download = `generated-image-${new Date().toISOString()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showNotification('Image downloaded!', 'success');
+                } catch (error) {
+                    showNotification('Failed to download image!', 'error');
+                }
+            });
+        
+            // Image Modal Handling
+            const imageModal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            const closeModal = document.querySelector('.close-modal');
+        
+            document.getElementById('fullscreen-image').addEventListener('click', () => {
+                modalImage.src = generatedImage.src;
+                imageModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        
+            closeModal.addEventListener('click', closeImageModal);
+            imageModal.addEventListener('click', (e) => {
+                if (e.target === imageModal) {
+                    closeImageModal();
+                }
+            });
+        
+            // API Functions with Error Handling
+            async function generateText(prompt) {
+                const response = await fetch(`${API_ENDPOINT}/generate-text`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.text) {
+                    throw new Error('No text generated');
+                }
+                return data.text;
+            }
+        
+            async function generateImage(prompt) {
+                const response = await fetch(`${API_ENDPOINT}/generate-image`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.image_url) {
+                    throw new Error('No image generated');
+                }
+                return data.image_url;
+            }
+        
+            async function generateBoth(prompt) {
+                const response = await fetch(`${API_ENDPOINT}/generate-both`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (!data.text || !data.image_url) {
+                    throw new Error('Generation incomplete');
+                }
+                return data;
+            }
+        
+            // Main Generation Handler with Enhanced Error Handling
+            async function handleGeneration() {
+                const prompt = promptInput.value.trim();
+                if (!prompt) {
+                    showNotification('Please enter a prompt!', 'error');
+                    return;
+                }
+        
+                if (prompt.length > 1000) {
+                    showNotification('Prompt is too long! Maximum 1000 characters.', 'error');
+                    return;
+                }
+        
+                showLoading(true);
+        
+               
+    try {
+        switch (state.currentMode) {
+            case 'text':
+                const text = await generateText(prompt);
+                generatedText.textContent = text;
+                break;
+            case 'image':
+                const imageUrl = await generateImage(prompt);
+                if (generatedImage && imageUrl) {
+                    generatedImage.src = imageUrl;
+                } else {
+                    throw new Error('Image generation failed');
+                }
+                break;
+            case 'both':
+                const result = await generateBoth(prompt);
+                generatedText.textContent = result.text;
+                if (generatedImage && result.image_url) {
+                    generatedImage.src = result.image_url;
+                } else {
+                    throw new Error('Image generation failed');
+                }
+                break;
+            default:
+                throw new Error('Invalid generation mode');
+        }
+        showNotification('Generation completed successfully!', 'success');
+    } catch (error) {
+        console.error('Generation error:', error);
+        showNotification(
+            error.message || 'An error occurred during generation!', 
+            'error'
+        );
+    } finally {
+        showLoading(false);
+    }
+}
+            // Utility Functions
+            function updateUI() {
+                textOutput.style.display = ['text', 'both'].includes(state.currentMode) ? 'block' : 'none';
+                imageOutput.style.display = ['image', 'both'].includes(state.currentMode) ? 'block' : 'none';
+            }
+        
+            function showLoading(show) {
+                loadingOverlay.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    const loadingMessages = [
+                        'Creating something amazing...',
+                        'Generating your content...',
+                        'Processing your request...',
+                        'Almost there...',
+                        'Working on it...'
+                    ];
+                    document.querySelector('.loading-text').textContent = 
+                        loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+                }
+            }
+        
+            function showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                
+                const icon = document.createElement('i');
+                icon.className = type === 'success' ? 'fas fa-check-circle' : 
+                                type === 'error' ? 'fas fa-exclamation-circle' : 
+                                'fas fa-info-circle';
+                
+                const text = document.createElement('span');
+                text.textContent = message;
+                
+                notification.appendChild(icon);
+                notification.appendChild(text);
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease forwards';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        
+            function clearOutputs() {
+                promptInput.value = '';
+                generatedText.textContent = '';
+                generatedImage.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+                characterCount.textContent = '0/1000';
+                characterCount.style.color = 'var(--text)';
+                showNotification('Outputs cleared!', 'success');
+            }
+        
+            function savePrompt() {
+                const prompt = promptInput.value.trim();
+                if (!prompt) {
+                    showNotification('Please enter a prompt to save!', 'warning');
+                    return;
+                }
+        
+                const savedPrompts = [...state.savedPrompts];
+                if (savedPrompts.includes(prompt)) {
+                    showNotification('This prompt is already saved!', 'warning');
+                    return;
+                }
+        
+                savedPrompts.push(prompt);
+                localStorage.setItem('savedPrompts', JSON.stringify(savedPrompts));
+                state.savedPrompts = savedPrompts;
+                showNotification('Prompt saved successfully!', 'success');
+            }
+        
+            function closeImageModal() {
+                imageModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        
+            // Keyboard Support
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && imageModal.style.display === 'flex') {
+                    closeImageModal();
+                }
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    handleGeneration();
+                }
+            });
+        
+            // Initial UI update
+            updateUI();
+        });
+        </script>
+</body>
+</html>

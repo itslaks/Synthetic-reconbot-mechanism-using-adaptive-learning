@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> INFOSIGHT </title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='landingpage.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  </head>
+  <body>
+    <div class="navbar" id="navbar">
+      <div class="logo">
+        <a href="#" style="font-size: 20px;"></a>
+      </div>
+    </div>
+    <div class="container">
+      <div class="message">WELCOME TO INFOSIGHT</div>
+      <a href="{{ url_for('homepage') }}" class="animated-button">CLICK TO EXPERIENCE</a>
+
+    </div>
+
+    <div class="particles"></div>
+    <div class="star-background"></div>
+    <script src="{{ url_for('static', filename='js/landingpage.js') }}" defer></script>
+  </body>
+</html>

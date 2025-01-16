@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Analysis Tool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 4px;
+            flex: 1;
+        }
+
+        .tab-button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .panel {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .word-counter {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .file-input {
+            margin-bottom: 20px;
+        }
+
+        .file-info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .warning {
+            color: #dc3545;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background-color: #eee;
+            border-radius: 2px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #007bff;
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .result {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-card {
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .result-card.ai-full {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+
+        .result-card.ai-modified {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+        }
+
+        .result-card.original {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Content Analysis Tool</h1>
+            <p>Analyze text or files for AI-generated content</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="togglePanel('text')">Text Analysis</button>
+            <button class="tab-button" onclick="togglePanel('file')">File Analysis</button>
+        </div>
+
+        <div class="panel text-panel active">
+            <textarea id="textInput" placeholder="Enter your text here..." oninput="updateWordCount(this)"></textarea>
+            <div id="wordCounter" class="word-counter">0 / 1000 words</div>
+            <button id="textAnalyzeButton" class="button" onclick="analyzeContent('text')">Analyze Text</button>
+        </div>
+
+        <div class="panel upload-panel">
+            <input type="file" id="fileInput" class="file-input" onchange="handleFileSelect(event)">
+            <div id="fileInfo" class="file-info"></div>
+            <div id="fileLimitWarning" class="warning">File size exceeds the 10MB limit</div>
+            <div id="progressBar" class="progress-bar">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+            </div>
+            <button id="fileAnalyzeButton" class="button" onclick="analyzeContent('file')" disabled>Analyze File</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Analyzing content...</p>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+        const WORD_LIMIT = 1000;
+        let currentFile = null;
+
+        function togglePanel(type) {
+            const textPanel = document.querySelector('.text-panel');
+            const uploadPanel = document.querySelector('.upload-panel');
+            const textButton = document.querySelector('.tab-button:first-child');
+            const fileButton = document.querySelector('.tab-button:last-child');
+            
+            if (type === 'text') {
+                textPanel.classList.add('active');
+                uploadPanel.classList.remove('active');
+                textButton.classList.add('active');
+                fileButton.classList.remove('active');
+            } else {
+                uploadPanel.classList.add('active');
+                textPanel.classList.remove('active');
+                fileButton.classList.add('active');
+                textButton.classList.remove('active');
+            }
+
+            // Reset result and loading state
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function updateWordCount(textarea) {
+            const text = textarea.value.trim();
+            const wordCount = text ? text.split(/\s+/).length : 0;
+            const wordCounter = document.getElementById('wordCounter');
+            const analyzeButton = document.getElementById('textAnalyzeButton');
+            
+            wordCounter.textContent = `${wordCount} / ${WORD_LIMIT} words`;
+            
+            if (wordCount > WORD_LIMIT) {
+                wordCounter.style.color = '#dc3545';
+                analyzeButton.disabled = true;
+            } else {
+                wordCounter.style.color = '#666';
+                analyzeButton.disabled = false;
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const fileInfo = document.getElementById('fileInfo');
+            const fileLimitWarning = document.getElementById('fileLimitWarning');
+            const analyzeButton = document.getElementById('fileAnalyzeButton');
+
+            if (file.size > MAX_FILE_SIZE) {
+                fileLimitWarning.style.display = 'block';
+                fileInfo.style.display = 'none';
+                analyzeButton.disabled = true;
+                return;
+            }
+
+            fileLimitWarning.style.display = 'none';
+            currentFile = file;
+            
+            fileInfo.innerHTML = `
+                <strong>${file.name}</strong><br>
+                Type: ${file.type || 'Unknown'}<br>
+                Size: ${(file.size / 1024 / 1024).toFixed(2)} MB
+            `;
+            fileInfo.style.display = 'block';
+            analyzeButton.disabled = false;
+        }
+
+        async function analyzeContent(type) {
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                
+                if (type === 'file') {
+                    if (!currentFile) {
+                        alert('Please select a file to analyze');
+                        loading.style.display = 'none';
+                        return;
+                    }
+                    formData.append('file', currentFile);
+                } else {
+                    const text = document.getElementById('textInput').value.trim();
+                    if (!text) {
+                        alert('Please enter some text to analyze');
+                        loading.style.display = 'none';
+                        return;
+                    }
+                    formData.append('text', text);
+                }
+
+                const response = await fetch('http://localhost:5000/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.message || 'Analysis failed');
+                }
+
+                result.innerHTML = `
+                    <div class="result-card ${data.category}">
+                        <h3>Analysis Result</h3>
+                        <p>${data.message}</p>
+                        ${data.details ? `<p><strong>Details:</strong> ${data.details}</p>` : ''}
+                        ${data.confidence ? `<p><strong>Confidence:</strong> ${data.confidence}%</p>` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="result-card">
+                        <h3>Error</h3>
+                        <p>${error.message || 'Error analyzing content. Please try again.'}</p>
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+            }
+        }
+
+        // Initialize word counter
+        document.addEventListener('DOMContentLoaded', () => {
+            updateWordCount(document.getElementById('textInput'));
+        });
+    </script>
+</body>
+</html>

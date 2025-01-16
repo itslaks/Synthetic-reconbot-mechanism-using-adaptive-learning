@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFOSIGHT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='homepage.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body> 
+    
+    <main>
+      <ul class='slider'>
+          <li class='item' style="background-image: url('static/images/webseeker.jpg')">
+              <div class='content'>
+                  <h1 class='title'>WEBSEEKER</h1>
+                  <p class='description'>Webseeker is a web security tool designed to scan URLs or domains. It leverages VirusTotal for virus and malware detection and performs Nmap scans to identify open ports and vulnerabilities. The tool provides comprehensive insights into web security by combining multiple security checks.</p>
+                  <div class="button" >
+                      <button id="ws" onclick="window.location.href='/webseeker'">WEB SEEKER</button>
+                  </div>
+              </div>
+          </li>
+          <li class='item' style="background-image: url('static/images/infosight_AI.jpg')">
+              <div class='content'>
+                  <h1 class='title'>INFOSIGHT_AI</h1>
+                  <p class='description'>INFOSIGHT_AI is an AI-driven tool focused on gathering and analyzing data from various sources. It uses machine learning algorithms to detect patterns, trends, and anomalies, offering valuable insights for decision-making. The tool is ideal for research, business intelligence, and cybersecurity.</p>
+                  <div class="button" >
+                      <button id="IS" onclick="window.location.href='/infosight_ai'">INFOSIGHT AI</button>
+                  </div>
+              </div>
+          </li>
+          <li class='item' style="background-image: url('static/images/lana_AI.jpg')">
+            <div class='content'>
+                <h1 class='title' style="color: black" >LANA_AI</h1>
+                <p class='description' style= "color: black ">LANA_AI is an intelligent virtual assistant that utilizes generative AI models for natural language processing. It can handle voice and text interactions, providing accurate responses and performing tasks based on user commands. LANA_AI is designed to enhance productivity and user experience.</p>
+                <div class="button" >
+                    <button id="LA" onclick="window.location.href='/lana_ai'" style="color:black">LANA_AI</button>
+                </div>
+            </div>
+        </li>
+          <li class='item' style="background-image: url('static/images/infocrypt.jpg')">
+              <div class='content'>
+                  <h1 class='title'>INFOCRYPT</h1>
+                  <p class='description'>INFOCRYPT is a secure encryption tool designed to protect sensitive information. It employs advanced cryptographic algorithms to ensure data confidentiality and integrity. Users can encrypt and decrypt files or text, safeguarding against unauthorized access and data breaches.</p>
+                  <div class="button" >
+                      <button id="IC" onclick="window.location.href='/infocrypt'">INFOCRYPT</button>
+                  </div>
+              </div>
+          </li>
+          <li class='item' style="background-image: url('static/images/filefender.jpg')">
+            <div class='content'>
+                <h1 class='title'>FILE FENDER</h1>
+                <p class='description'>Scan your files for viruses using our service. We check files against multiple popular databases to ensure they are free from threats.</p>
+                <div class="button">
+                    <button id="FF" onclick="window.location.href='/filescanner'">FILE FENDER</button>
+                </div>
+            </div>
+        </li>
+        <li class='item' style="background-image: url('static/images/portscanner.jpeg')">
+            <div class='content'>
+                <h1 class='title'>PORTSCANNER</h1>
+                <p class='description'>Portscanner is a network security tool used to identify open ports on a target system. By scanning for vulnerabilities, it helps in assessing the security posture of networks and devices. Portscanner is essential for penetration testing and network security audits.</p>
+                <div class="button" >
+                    <button id="PS" onclick="window.location.href='/portscanner'">PORT SCANNER</button>
+                </div>
+            </div>
+        </li>
+        <li class='item' style="background-image: url('static/images/snapspeak.jpg')">
+            <div class='content'>
+                <h1 class='title'>SNAPSPEAK_AI</h1>
+                <p class='description'> SnapSpeak AI is an advanced image analysis tool designed to generate detailed captions, detect steganography, extract metadata, and create unique image hashes. It offers a user-friendly interface for uploading images and quickly analyzing them.</p>
+                <div class="button" >
+                    <button id="LA" onclick="window.location.href='/snapspeak_ai'">SNAPSPEAK_AI</button>
+                </div>
+            </div>
+        </li>
+        <li class='item' style="background-image: url('static/images/cybersentry_AI.jpeg')">
+            <div class='content'>
+                <h1 class='title ' style="color : black;" >CYBERSENTRY_AI</h1>
+                <p class='description' style="color : black;" >CyberSentry_AI is a bot specially made for cybersecurity and also functions as a normal bot. It continuously monitors networks, identifies suspicious activities, and provides real-time alerts to mitigate threats. CyberSentry_AI ensures robust security while also handling regular bot tasks.</p>
+                <div class="button" >
+                    <button id="CS" onclick="window.location.href='/cybersentry_ai'">CYBERSENTRY_AI</button>
+                </div>
+            </div>
+        </li>
+          <li class='item' style="background-image: url('static/images/tracklist.jpg')">
+              <div class='content'>
+                  <h1 class='title'>TRACKLYST</h1>
+                  <p class='description'>Trackylst is a tool used to fetch usernames from all possible social media platforms. It helps users track their digital presence and find profiles across various networks. This tool is beneficial for personal branding, security checks, and online reputation management.</p>
+                  <div class="button" >
+                      <button id="TL" onclick="window.location.href='/osint'">TRACKLYST</button>
+                  </div>
+              </div>
+          </li>
+          <li class='item' style="background-image: url('static/images/enscan.png')">
+            <div class='content'>
+                <h1 class='title'>SITE INDEX</h1>
+                <p class='description'>Site index offers comprehensive analysis for email domains, URL classification, and DNS enumeration. It provides detailed JSON responses with domain information, URL risk assessments, and DNS records, along with clear definitions for each result.</p>
+                <div class="button" >
+                    <button id="EN" onclick="window.location.href='/enscan'">SITE INDEX</button>
+                </div>
+            </div>
+        </li> 
+      </ul>
+    <nav class='nav'>
+        <button class='btn prev'>&#129152;</button>
+        <button class='btn next'>&#129154;</button>
+    </nav>
+  </main>
+  <script src="{{ url_for('static', filename='js/homepage.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Network Port Scanner</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-hover: #1d4ed8;
+            --background: #0f172a;
+            --card: #1e293b;
+            --text: #e2e8f0;
+            --border: #334155;
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #0ea5e9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: var(--card);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .scan-panel {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            background: var(--background);
+            border: 2px solid var(--border);
+            color: var(--text);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .scan-types-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .scan-type {
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .scan-type:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .scan-type.selected {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .scan-type h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .scan-type p {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .scan-type code {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .button {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            background: var(--primary);
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .button:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            display: none;
+            background: var(--card);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .loading-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .radar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            position: relative;
+            animation: radar 2s linear infinite;
+        }
+
+        .radar::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 2px;
+            background: var(--primary);
+            transform-origin: left;
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes radar {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes scan {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .pulse {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--background);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .scan-results {
+            display: none;
+        }
+
+        .result-card {
+            background: var(--card);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-header h2 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            background: var(--background);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+        }
+
+        .port-item {
+            background: var(--background);
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .port-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .badge-open {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .badge-closed {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .badge-filtered {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .error-toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: var(--error);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .scan-types-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Advanced Network Port Scanner</h1>
+            <p>Comprehensive network analysis and security assessment tool</p>
+        </div>
+
+        <div class="scan-panel">
+            <div class="input-group">
+                <label for="target-input">Target (IP, Domain, or URL)</label>
+                <input 
+                    type="text" 
+                    id="target-input" 
+                    placeholder="Enter target (e.g., example.com, 192.168.1.1, https://example.com)"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="scan-types-grid" id="scan-types"></div>
+            <button id="scan-button" class="button">Start Scan</button>
+        </div>
+
+        <div class="status-bar" id="status-bar">
+            <div class="loading-animation">
+                <div class="radar"></div>
+                <div class="pulse"></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <p id="status-message">Initializing scan...</p>
+        </div>
+
+        <div class="scan-results" id="scan-results"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const targetInput = document.getElementById('target-input');
+    const scanTypesGrid = document.getElementById('scan-types');
+    const scanButton = document.getElementById('scan-button');
+    const statusBar = document.getElementById('status-bar');
+    const progressFill = document.getElementById('progress-fill');
+    const statusMessage = document.getElementById('status-message');
+    const scanResults = document.getElementById('scan-results');
+
+    let selectedScanType = null;
+    let scanning = false;
+
+    // Fetch available scan types from the API
+    async function fetchScanTypes() {
+        try {
+            const response = await fetch('/portscanner/api/scan-types');
+            const data = await response.json();
+            if (data.success) {
+                renderScanTypes(data.scan_types);
+            } else {
+                showError('Failed to load scan types');
+            }
+        } catch (error) {
+            showError('Failed to connect to the server');
+        }
+    }
+
+    // Render scan types in the grid
+    function renderScanTypes(scanTypes) {
+        scanTypesGrid.innerHTML = '';
+        Object.entries(scanTypes).forEach(([type, info]) => {
+            const element = document.createElement('div');
+            element.className = 'scan-type';
+            element.dataset.type = type;
+            element.innerHTML = `
+                <h3>${formatScanType(type)}</h3>
+                <p>${info.description}</p>
+                <code>${info.command}</code>
+            `;
+            element.addEventListener('click', () => selectScanType(element, type));
+            scanTypesGrid.appendChild(element);
+        });
+    }
+
+    // Format scan type for display
+    function formatScanType(type) {
+        return type.split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+
+    // Handle scan type selection
+    function selectScanType(element, type) {
+        document.querySelectorAll('.scan-type').forEach(el => {
+            el.classList.remove('selected');
+        });
+        element.classList.add('selected');
+        selectedScanType = type;
+    }
+
+    // Show error message
+    function showError(message) {
+        const toast = document.createElement('div');
+        toast.className = 'error-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    // Update progress bar and status
+    function updateProgress(progress, message) {
+        progressFill.style.width = `${progress}%`;
+        statusMessage.textContent = message;
+    }
+
+    // Format duration
+    function formatDuration(seconds) {
+        if (seconds < 60) return `${seconds}s`;
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}m ${remainingSeconds}s`;
+    }
+
+    // Render scan results
+    function renderResults(data) {
+        const scanInfo = data.scan_info;
+        const hosts = data.hosts;
+
+        let resultsHTML = `
+            <div class="result-card">
+                <div class="result-header">
+                    <h2>Scan Results for ${scanInfo.target}</h2>
+                    <p>Scan Type: ${scanInfo.description}</p>
+                </div>
+                <div class="meta-info">
+                    <div class="meta-item">Duration: ${formatDuration(scanInfo.elapsed)}</div>
+                    <div class="meta-item">Total Hosts: ${scanInfo.total_hosts}</div>
+                    <div class="meta-item">Up Hosts: ${scanInfo.up_hosts}</div>
+                    <div class="meta-item">Down Hosts: ${scanInfo.down_hosts}</div>
+                </div>
+        `;
+
+        Object.entries(hosts).forEach(([host, hostData]) => {
+            resultsHTML += `
+                <div class="result-card">
+                    <h3>Host: ${host}</h3>
+                    <p>State: ${hostData.state}</p>
+                    ${hostData.hostnames.length ? `<p>Hostnames: ${hostData.hostnames.join(', ')}</p>` : ''}
+            `;
+
+            if (hostData.os_matches) {
+                resultsHTML += `
+                    <div class="meta-item">
+                        <h4>OS Detection:</h4>
+                        <p>${hostData.os_matches[0]?.name || 'Unknown'}</p>
+                    </div>
+                `;
+            }
+
+            Object.entries(hostData.protocols).forEach(([proto, ports]) => {
+                resultsHTML += `<h4>${proto.toUpperCase()} Ports:</h4>`;
+                Object.entries(ports).forEach(([port, info]) => {
+                    const stateBadgeClass = 
+                        info.state === 'open' ? 'badge-open' :
+                        info.state === 'filtered' ? 'badge-filtered' : 'badge-closed';
+
+                    resultsHTML += `
+                        <div class="port-item">
+                            <div class="port-header">
+                                <span>Port ${port} (${info.service})</span>
+                                <span class="badge ${stateBadgeClass}">${info.state}</span>
+                            </div>
+                            ${info.product ? `<p>Product: ${info.product} ${info.version}</p>` : ''}
+                            ${info.extrainfo ? `<p>Info: ${info.extrainfo}</p>` : ''}
+                        </div>
+                    `;
+                });
+            });
+
+            resultsHTML += '</div>';
+        });
+
+        resultsHTML += '</div>';
+        scanResults.innerHTML = resultsHTML;
+        scanResults.style.display = 'block';
+    }
+
+    // Perform the scan
+    async function performScan() {
+        if (!targetInput.value.trim()) {
+            showError('Please enter a target');
+            return;
+        }
+
+        if (!selectedScanType) {
+            showError('Please select a scan type');
+            return;
+        }
+
+        if (scanning) {
+            return;
+        }
+
+        scanning = true;
+        scanButton.disabled = true;
+        statusBar.style.display = 'block';
+        scanResults.style.display = 'none';
+        updateProgress(0, 'Initializing scan...');
+
+        try {
+            const response = await fetch('/portscanner/api/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    target: targetInput.value.trim(),
+                    scanType: selectedScanType
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                updateProgress(100, 'Scan completed successfully');
+                renderResults(data);
+            } else {
+                showError(data.error || 'Scan failed');
+                updateProgress(100, 'Scan failed');
+            }
+        } catch (error) {
+            showError('Connection error');
+            updateProgress(100, 'Connection error');
+        } finally {
+            scanning = false;
+            scanButton.disabled = false;
+            setTimeout(() => {
+                statusBar.style.display = 'none';
+            }, 2000);
+        }
+    }
+
+    // Event listeners
+    scanButton.addEventListener('click', performScan);
+    targetInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performScan();
+        }
+    });
+
+    // Initialize
+    fetchScanTypes();
+});
+</script>
+</body>
+</html>

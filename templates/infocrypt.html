@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfoCrypt - Secure Data Processing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #1d4ed8;
+    --background-dark: #0f172a;
+    --background-darker: #1e293b;
+    --text-light: #e2e8f0;
+    --text-lighter: #f8fafc;
+    --text-dim: #94a3b8;
+    --border-color: #334155;
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+}
+
+body {
+    display: flex;
+    background: var(--background-dark);
+    min-height: 100vh;
+    color: var(--text-light);
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 300px;
+    height: 100vh;
+    background: var(--background-darker);
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding: 0;
+    border-right: 1px solid var(--border-color);
+    z-index: 1000;
+}
+
+.logo-container {
+    padding: 24px;
+    background: var(--background-darker);
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+    font-size: 24px;
+    color: var(--text-lighter);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+}
+
+.logo-icon:hover {
+    transform: scale(1.05);
+}
+
+/* Algorithm List Styles */
+.algorithms-list {
+    padding: 20px 0;
+    overflow-y: auto;
+    height: calc(100vh - 88px);
+}
+
+.algorithm-category {
+    padding: 12px 24px;
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 8px;
+}
+
+.algorithm-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    color: var(--text-light);
+    font-size: 15px;
+    border-left: 4px solid transparent;
+}
+
+.algorithm-item:hover {
+    background: var(--background-dark);
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+}
+
+.algorithm-item.selected {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+    font-weight: 500;
+    border-left-color: var(--primary-color);
+}
+
+.algorithm-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(37, 99, 235, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.algorithm-item:hover .algorithm-icon {
+    transform: scale(1.1);
+}
+
+/* Main Content Styles */
+.main-content {
+    flex: 1;
+    margin-left: 300px;
+    padding: 32px;
+    background: var(--background-dark);
+}
+
+.content-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Section Styles */
+.input-section, .result-section {
+    background: var(--background-darker);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.info-box {
+    max-width: 100%;
+    padding: 24px;
+}
+
+
+.input-section:hover, .result-section:hover, .info-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-lighter);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Form Elements */
+textarea {
+    width: 100%;
+    height: 120px;
+    padding: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: vertical;
+    font-size: 15px;
+    background: var(--background-dark);
+    color: var(--text-light);
+    transition: all 0.3s ease;
+    margin-bottom: 16px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.key-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 15px;
+    margin-bottom: 16px;
+    background: var(--background-dark);
+    color: var(--text-light);
+    display: none;
+    transition: all 0.3s ease;
+}
+
+.key-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Button Styles */
+.button-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.primary-btn {
+    background: var(--primary-color);
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.primary-btn:hover:not(:disabled) {
+    background: var(--secondary-color);
+    transform: translateY(-1px);
+}
+
+.primary-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150%;
+    height: 150%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    transition: transform 0.6s;
+}
+
+.primary-btn:active::after {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.secondary-btn {
+    background: var(--background-dark);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+}
+
+.secondary-btn:hover:not(:disabled) {
+    background: var(--background-darker);
+    transform: translateY(-1px);
+}
+
+/* Result Section */
+pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 14px;
+    padding: 16px;
+    background: var(--background-dark);
+    color: var(--text-light);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+pre::before {
+    content: 'Result';
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: white;
+}
+
+/* Info Box Styles */
+.info-box {
+    display: none;
+}
+
+.info-box h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-lighter);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-content {
+    color: var(--text-light);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.example-box {
+    background: var(--background-dark);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 14px;
+    position: relative;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: break-all;
+}
+
+.example-box div {
+    line-height: 1.5;
+}
+
+.example-box::before {
+    content: 'Example';
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--primary-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: white;
+}
+
+.tip-box {
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.tip-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tip-content {
+    color: var(--text-light);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.key-points {
+    margin: 16px 0;
+    padding-left: 20px;
+    list-style: none;
+}
+
+.key-points li {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 12px;
+    color: var(--text-light);
+}
+
+.key-points li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+}
+
+.category-badge {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    display: inline-block;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+}
+
+/* Copy animation */
+@keyframes copyFeedback {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.copy-feedback {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    animation: copyFeedback 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 16px;
+    }
+
+    .algorithms-list {
+        height: auto;
+        max-height: 300px;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo-container">
+            <div class="logo">
+                <div class="logo-icon">IC</div>
+                InfoCrypt
+            </div>
+        </div>
+        <div class="algorithms-list">
+            <div class="algorithm-category">Hash Functions</div>
+            <div class="algorithm-item" onclick="selectAlgorithm('SHA-256', 'hash')">
+                SHA-256
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('SHA-1', 'hash')">
+                SHA-1
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('SHA3-256', 'hash')">
+                SHA3-256
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('SHA-512', 'hash')">
+                SHA-512
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('SHA-384', 'hash')">
+                SHA-384
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('BLAKE2b', 'hash')">
+                BLAKE2b
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('SHAKE-128', 'hash')">
+                SHAKE-128
+            </div>
+            
+            
+            <div class="algorithm-category">Encryption</div>
+            <div class="algorithm-item" onclick="selectAlgorithm('AES-128', 'encryption')">
+                AES-128
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('AES-256', 'encryption')">
+                AES-256
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('ChaCha20', 'encryption')">
+                ChaCha20
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('Fernet', 'encryption')">
+                Fernet
+            </div>
+            <div class="algorithm-item" onclick="selectAlgorithm('RSA', 'encryption')">
+                RSA
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-container">
+            <div class="input-section">
+                <div class="section-title">Input</div>
+                <textarea id="text" placeholder="Enter your text here..."></textarea>
+                <input type="text" id="key-input" class="key-input" placeholder="Enter encryption key (optional)">
+                <div class="button-group">
+                    <button id="hashBtn" class="primary-btn" onclick="processData('hash')" disabled>
+                        Generate Hash
+                    </button>
+                    <button id="encryptBtn" class="primary-btn" onclick="processData('encrypt')" disabled>
+                        Encrypt
+                    </button>
+                    <button id="decryptBtn" class="primary-btn" onclick="processData('decrypt')" disabled>
+                        Decrypt
+                    </button>
+                    <button class="secondary-btn" onclick="showInfo()">
+                        Show Information
+                    </button>
+                    <button class="secondary-btn" onclick="showExample()">
+                        Show Example
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <div class="section-title">Result</div>
+                <pre id="result">Your result will appear here...</pre>
+            </div>
+
+            <div id="infoBox" class="info-box">
+                <h3>About This Algorithm</h3>
+                <div id="algorithmInfo" class="info-content"></div>
+                <div class="tip-box">
+                    <div id="tipContent" class="tip-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedAlgorithm = '';
+ let selectedType = '';
+ 
+ const algorithmInfo = {
+    'SHA-256': {
+        icon: '🛡️',
+        display: '<i class="fas fa-shield-alt text-blue-400"></i>',
+        info: 'SHA-256 (Secure Hash Algorithm 256-bit) is one of the most secure and widely used cryptographic hash functions.',
+        keyPoints: [
+            'Core component of Bitcoin and many blockchain technologies',
+            'Generates unique 256-bit (64 character) hash value',
+            'Mathematically impossible to reverse the hash to original data',
+            'Any change in input produces completely different hash'
+        ],
+        example: 'Input: "Hello"\nOutput: 185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969',
+        tips: [
+            'Always salt passwords before hashing',
+            'Use for digital signatures and file integrity verification'
+        ],
+        category: 'Cryptographic Strength: Very High'
+    },
+    'SHA-1': {
+        icon: '⚠️',
+        display: '<i class="fas fa-exclamation-triangle text-yellow-400"></i>',
+        info: 'SHA-1 is a legacy hash function that produces 160-bit (40 character) hashes. While still used in some systems, it\'s considered cryptographically broken.',
+        keyPoints: [
+            'Used in older systems and Git version control',
+            'Vulnerabilities discovered in 2017',
+            'Faster than SHA-256 but less secure',
+            'Not recommended for new security applications'
+        ],
+        example: 'Input: "Hello"\nOutput: f7ff9e8b7bb2e09b70935a5d785e0cc5d9d0abf0',
+        tips: [
+            'Migrate critical systems to SHA-256 or better',
+            'Only use for legacy compatibility'
+        ],
+        category: 'Cryptographic Strength: Low (Deprecated)'
+    },
+    'SHA3-256': {
+        icon: '🔒',
+        display: '<i class="fas fa-lock text-green-400"></i>',
+        info: 'SHA3-256 is the newest member of the SHA family, using an entirely different internal structure (Keccak).',
+        keyPoints: [
+            'Designed as a backup for SHA-2 family',
+            'Resistant to quantum computing attacks',
+            'Different internal structure than SHA-2',
+            'Excellent performance on hardware implementations'
+        ],
+        example: 'Input: "Hello"\nOutput: 3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392',
+        tips: [
+            'Ideal for future-proofing applications',
+            'Great choice for hardware-based implementations'
+        ],
+        category: 'Cryptographic Strength: Very High'
+    },
+    'SHA-512': {
+        icon: '🏰',
+        display: '<i class="fas fa-castle text-purple-400"></i>',
+        info: 'SHA-512 provides an extra-large 512-bit output size, making it extremely secure but slightly slower.',
+        keyPoints: [
+            'Produces 512-bit (128 character) hash value',
+            'Better performance on 64-bit systems',
+            'Overkill for most applications',
+            'Used in high-security environments'
+        ],
+        example: 'Input: "Hello"\nOutput: 3615f80c9d293ed7402687f94b22d58e529b8cc7916f8fac7fddf7fbd5af4cf777d3d795a7a00a16bf7e7f3fb9561ee9baae480da9fe7a18769e71886b03f315',
+        tips: [
+            'Use when maximum security is required',
+            'Consider hardware architecture for performance'
+        ],
+        category: 'Cryptographic Strength: Extremely High'
+    },
+    'BLAKE2b': {
+        icon: '⚡',
+        display: '<i class="fas fa-bolt text-yellow-400"></i>',
+        info: 'BLAKE2b is a high-speed cryptographic hash function optimized for 64-bit platforms.',
+        keyPoints: [
+            'Faster than MD5 but as secure as SHA-3',
+            'Can be used as a MAC (Message Authentication Code)',
+            'Optimized for modern CPUs',
+            'Supports variable length output'
+        ],
+        example: 'Input: "Hello"\nOutput: e4cfa39a3d37be31c59609e807970799caa68a19bfaa15135f165085e01d41a65ba1e1b146aeb6bd0092b49eac214c103ccfa3a365954bbbe52f74a2b3620c94',
+        tips: [
+            'Great choice for high-performance applications',
+            'Use when you need both speed and security'
+        ],
+        category: 'Cryptographic Strength: High'
+    },
+    'SHAKE-128': {
+        icon: '🎲',
+        display: '<i class="fas fa-dice text-indigo-400"></i>',
+        info: 'SHAKE-128 is an extendable-output function (XOF) from the SHA-3 family.',
+        keyPoints: [
+            'Variable output length (extendable)',
+            'Part of the SHA-3 family',
+            'Useful for random number generation',
+            'Good for key derivation functions'
+        ],
+        example: 'Input: "hello world"\nOutput: 3a9159f071e4dd1c8c4f968607c30942',
+        tips: [
+            'Use when you need custom-length hashes',
+            'Great for generating multiple keys from one input'
+        ],
+        category: 'Cryptographic Strength: High'
+    },
+    'CRC32': {
+        icon: '🔍',
+        display: '<i class="fas fa-search text-gray-400"></i>',
+        info: 'CRC32 is a non-cryptographic hash function designed for error detection.',
+        keyPoints: [
+            'Very fast but not cryptographically secure',
+            'Good for error detection in networks',
+            'Common in ZIP files and Ethernet',
+            '32-bit output size'
+        ],
+        example: 'Input: "Hello"\nOutput: 4b6fa373',
+        tips: [
+            'Only use for error checking, never for security',
+            'Perfect for real-time data verification'
+        ],
+        category: 'Cryptographic Strength: None (Error Detection Only)'
+    },
+    'AES-128': {
+        icon: '🔐',
+        display: '<i class="fas fa-key text-orange-400"></i>',
+        info: 'AES-128 is a symmetric encryption algorithm using a 128-bit key.',
+        keyPoints: [
+            'Fast and secure for most applications',
+            'Widely supported in hardware',
+            'Used in WiFi encryption (WPA2)',
+            'Good balance of security and performance'
+        ],
+        example: 'Input: "hello world"\nKey: "basic key"\nOutput: Encrypted(base64): "U2FsdGVkX1+7fHxhS5SyIj6Zk4c8O5U1"',
+        tips: [
+            'Use a secure method to share the key',
+            'Combine with secure key generation'
+        ],
+        category: 'Encryption Strength: High'
+    },
+    'AES-256': {
+        icon: '🏛️',
+        display: '<i class="fas fa-building-columns text-red-400"></i>',
+        info: 'AES-256 is the strongest variant of AES, using a 256-bit key.',
+        keyPoints: [
+            'Military grade encryption',
+            'Quantum-resistant (currently)',
+            'Used for top-secret information',
+            'Slightly slower than AES-128'
+        ],
+        example: 'Input: "hello world"\nKey: "basic key"\nOutput: Encrypted(base64): "U2FsdGVkX1/8iIB+jqvqYtfX+pL8h+z4"',
+        tips: [
+            'Use for highly sensitive data',
+            'Ensure proper key management'
+        ],
+        category: 'Encryption Strength: Very High'
+    },
+    'SHA-384': {
+    icon: '🔒',
+    display: '<i class="fas fa-shield-halved text-purple-400"></i>',
+    info: 'SHA-384 (Secure Hash Algorithm 384-bit) is a truncated version of SHA-512 providing a 384-bit (96 character) hash value, offering a strong balance between security and performance.',
+    keyPoints: [
+        'Part of the SHA-2 family, based on SHA-512',
+        'Provides 384 bits (48 bytes) of security',
+        'Faster than SHA-512 but more secure than SHA-256',
+        'Common in TLS/SSL certificates and digital signatures',
+        'Good choice for HMAC implementations'
+    ],
+    example: 'Input: "hello world"\nOutput: fdbd8e75a67f29f701a4e040385e2e23986303ea10239211af907fcbb83578b3e417cb71ce646efd0819dd8c088de1bd',
+    tips: [
+        'Ideal for applications requiring high security but slightly faster than SHA-512',
+        'Good alternative when SHA-512 is considered overkill',
+        'Perfect for digital certificates and secure communication channels'
+    ],
+    category: 'Cryptographic Strength: Very High'
+},
+    'ChaCha20': {
+        icon: '🌪️',
+        display: '<i class="fas fa-wind text-teal-400"></i>',
+        info: 'ChaCha20 is a modern stream cipher, excellent for software implementations.',
+        keyPoints: [
+            'Faster than AES on software',
+            'Used in TLS and HTTPS',
+            'Popular in mobile devices',
+            'Designed by Daniel J. Bernstein'
+        ],
+        example: 'Input: "hello world"\nKey: "basic key"\nOutput: Encrypted(base64): "dGhpcyBpcyBhbiBleGFtcGxl"',
+        tips: [
+            'Great choice for mobile applications',
+            'Never reuse nonce-key pairs'
+        ],
+        category: 'Encryption Strength: High'
+    },
+    'Fernet': {
+        icon: '📬',
+        display: '<i class="fas fa-envelope-open-text text-blue-300"></i>',
+        info: 'Fernet is a secure symmetric encryption recipe that makes it impossible to tamper with or manipulate the message.',
+        keyPoints: [
+            'Implements AES in CBC mode',
+            'Includes built-in rotation of keys',
+            'Provides authentication (HMAC)',
+            'Time-based token generation'
+        ],
+        example: 'Input: "hello world"\nKey: "basic key"\nOutput: Encrypted(base64): "gAAAAABkxKh2b_1v8H5X4K8Z9Y2nF0_y"',
+        tips: [
+            'Perfect for storing sensitive data',
+            'Use when you need both encryption and authentication'
+        ],
+        category: 'Encryption Strength: High'
+    },
+    'RSA': {
+        icon: '🔑',
+        display: '<i class="fas fa-key-skeleton text-yellow-300"></i>',
+        info: 'RSA is an asymmetric encryption system using public-private key pairs.',
+        keyPoints: [
+            'Different keys for encryption and decryption',
+            'Slower than symmetric encryption',
+            'Key sizes typically 2048 or 4096 bits',
+            'Used in secure communications'
+        ],
+        example: 'Input: "hello world"\nKey: "basic key"\nOutput: Encrypted(base64): "MIGfMA0GCSqGSIb3DQEBAQUAA4GN"',
+        tips: [
+            'Keep private keys absolutely secure',
+            'Use with hybrid encryption for large data'
+        ],
+        category: 'Encryption Strength: High (Key-Size Dependent)'
+    }
+};
+
+ 
+ function selectAlgorithm(algorithm, type) {
+     selectedAlgorithm = algorithm;
+     selectedType = type;
+     
+     document.querySelectorAll('.algorithm-item').forEach(item => {
+         item.classList.remove('selected');
+     });
+     event.currentTarget.classList.add('selected');
+     
+     const keyInput = document.getElementById('key-input');
+     keyInput.style.display = type === 'encryption' ? 'block' : 'none';
+     
+     document.getElementById('hashBtn').disabled = type !== 'hash';
+     document.getElementById('encryptBtn').disabled = type !== 'encryption';
+     document.getElementById('decryptBtn').disabled = type !== 'encryption';
+     
+     document.getElementById('infoBox').style.display = 'none';
+ }
+ 
+ function showInfo() {
+    if (!selectedAlgorithm) {
+        alert('Please select an algorithm first');
+        return;
+    }
+
+    const info = algorithmInfo[selectedAlgorithm];
+    if (!info) {
+        alert('Information not available for this algorithm');
+        return;
+    }
+
+    const infoBox = document.getElementById('infoBox');
+    const infoContent = document.getElementById('algorithmInfo');
+
+    let contentHTML = `
+        <p>${info.info}</p>
+        <ul class="key-points">
+            ${info.keyPoints.map(point => `<li>${point}</li>`).join('')}
+        </ul>
+        <div class="category-badge">
+            ${info.category}
+        </div>
+    `;
+
+    infoContent.innerHTML = contentHTML;
+    infoBox.style.display = 'block';
+}
+
+function showExample() {
+    if (!selectedAlgorithm) {
+        alert('Please select an algorithm first');
+        return;
+    }
+
+    const info = algorithmInfo[selectedAlgorithm];
+    if (!info) {
+        alert('Example not available for this algorithm');
+        return;
+    }
+
+    const exampleBox = document.getElementById('infoBox');
+    const exampleContent = document.getElementById('algorithmInfo');
+
+    // Key requirements for encryption algorithms
+    const keyRequirements = {
+        'AES-128': '16 characters (128 bits)',
+        'AES-256': '32 characters (256 bits)',
+        'ChaCha20': '32 bytes',
+        'Fernet': '32 url-safe base64-encoded bytes',
+        'RSA': '2048+ bits key pair'
+    };
+
+    // Generate example HTML based on algorithm type
+    let exampleHTML = `
+        <h3>Example Usage</h3>
+        <div class="example-box" style="word-wrap: break-word; white-space: pre-wrap;">`;
+
+    if (selectedType === 'encryption') {
+        // Example for encryption algorithms
+        exampleHTML += `
+            <div style="margin-bottom: 12px;">Input: "hello world"</div>
+            <div style="margin-bottom: 12px;">Key: "basic_key_for_testing_purposes_123"</div>
+            <div>Output: ${info.example.split('\n')[2].split(': ')[1]}</div>
+        </div>
+
+        <div class="tip-box">
+            <div class="tip-title">Implementation Tips</div>
+            <div class="tip-content">
+                ${info.tips.map(tip => `<p>• ${tip}</p>`).join('')}
+            </div>
+        </div>
+
+        <div class="tip-box" style="margin-top: 16px;">
+            <div class="tip-title">Key Requirements</div>
+            <div class="tip-content">
+                <p>• Required Key Length: ${keyRequirements[selectedAlgorithm]}</p>
+                <p>• Test Key: "basic_key_for_testing_purposes_123"</p>
+                <p style="color: #f59e0b;">⚠️ Warning: Always use cryptographically secure random keys in production</p>
+            </div>
+        </div>`;
+    } else {
+        // Example for hash algorithms
+        exampleHTML += `
+            <div style="margin-bottom: 12px;">Input: "hello world"</div>
+            <div>Output: ${info.example.split('\n')[1].split(': ')[1]}</div>
+        </div>
+
+        <div class="tip-box">
+            <div class="tip-title">Implementation Tips</div>
+            <div class="tip-content">
+                ${info.tips.map(tip => `<p>• ${tip}</p>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Add algorithm information
+    exampleHTML += `
+        <div class="tip-box" style="margin-top: 16px;">
+            <div class="tip-title">Algorithm Information</div>
+            <div class="tip-content">
+                <p>${info.info}</p>
+                <div class="category-badge" style="margin-top: 12px;">
+                    ${info.category}
+                </div>
+            </div>
+        </div>
+
+        <div class="tip-box" style="margin-top: 16px;">
+            <div class="tip-title">Key Features</div>
+            <div class="tip-content">
+                <ul class="key-points" style="margin-top: 8px;">
+                    ${info.keyPoints.map(point => `<li>${point}</li>`).join('')}
+                </ul>
+            </div>
+        </div>`;
+
+    exampleContent.innerHTML = exampleHTML;
+    exampleBox.style.display = 'block';
+
+    // Scroll the info box into view
+    exampleBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+} 
+ async function processData(action) {
+     if (!selectedAlgorithm) {
+         alert('Please select an algorithm first');
+         return;
+     }
+     
+     const text = document.getElementById('text').value;
+     if (!text) {
+         alert('Please enter some text to process');
+         return;
+     }
+ 
+     const key = document.getElementById('key-input').value;
+     
+     try {
+         // Using the correct endpoint with the Blueprint prefix
+         const response = await fetch('/infocrypt/process', {
+             method: 'POST',
+             headers: {
+                 'Content-Type': 'application/json'
+             },
+             body: JSON.stringify({
+                 text: text,
+                 algorithm: selectedAlgorithm,
+                 action: action,
+                 key: key || undefined
+             })
+         });
+ 
+         const data = await response.json();
+         const resultElement = document.getElementById('result');
+         
+         if (data.error) {
+             resultElement.style.color = '#ef4444';
+             resultElement.textContent = `Error: ${data.error}`;
+         } else {
+             resultElement.style.color = 'inherit';
+             resultElement.textContent = data.result;
+             
+             if (action === 'encrypt') {
+                 showEncryptionNotice();
+             }
+         }
+     } catch (error) {
+         const resultElement = document.getElementById('result');
+         resultElement.style.color = '#ef4444';
+         resultElement.textContent = `Error: ${error.message}`;
+     }
+ }
+ 
+ function showEncryptionNotice() {
+     const notice = document.createElement('div');
+     notice.style.marginTop = '16px';
+     notice.style.padding = '12px';
+     notice.style.background = '#f0fdf4';
+     notice.style.border = '1px solid #bbf7d0';
+     notice.style.borderRadius = '8px';
+     notice.style.color = '#166534';
+     notice.style.fontSize = '14px';
+     notice.innerHTML = `
+         <strong>Important:</strong> If you provided a custom key, make sure to save it securely. 
+         You'll need the same key to decrypt this message later.
+     `;
+     
+     const resultSection = document.querySelector('.result-section');
+     const existingNotice = resultSection.querySelector('div[style*="margin-top"]');
+     if (existingNotice) {
+         resultSection.removeChild(existingNotice);
+     }
+     resultSection.appendChild(notice);
+ }
+ 
+ // Add event listeners for input validation
+ document.getElementById('text').addEventListener('input', function() {
+     const hasText = this.value.trim().length > 0;
+     document.getElementById('hashBtn').disabled = !selectedAlgorithm || selectedType !== 'hash' || !hasText;
+     document.getElementById('encryptBtn').disabled = !selectedAlgorithm || selectedType !== 'encryption' || !hasText;
+     document.getElementById('decryptBtn').disabled = !selectedAlgorithm || selectedType !== 'encryption' || !hasText;
+ });
+ 
+ // Add copy to clipboard functionality
+ document.getElementById('result').addEventListener('click', async function() {
+     const text = this.textContent;
+     if (text && text !== 'Your result will appear here...') {
+         try {
+             await navigator.clipboard.writeText(text);
+             const originalText = this.textContent;
+             this.textContent = 'Copied to clipboard!';
+             setTimeout(() => {
+                 this.textContent = originalText;
+             }, 1500);
+         } catch (err) {
+             console.error('Failed to copy text: ', err);
+         }
+     }
+ });
+ 
+ // Mobile responsiveness handler
+ function handleMobileView() {
+     const sidebar = document.querySelector('.sidebar');
+     const content = document.querySelector('.main-content');
+     
+     if (window.innerWidth <= 768) {
+         sidebar.style.position = 'relative';
+         content.style.marginLeft = '0';
+     } else {
+         sidebar.style.position = 'fixed';
+         content.style.marginLeft = '300px';
+     }
+ }
+ 
+ window.addEventListener('resize', handleMobileView);
+ handleMobileView();
+     </script>
+ </body>
+ </html>
