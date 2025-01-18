@@ -1,7 +1,21 @@
 import os
+import warnings
+import logging
+
+# Suppress all warnings
+warnings.filterwarnings('ignore')
+
+# Suppress TensorFlow logs and warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+
+# Configure logging to suppress TensorFlow messages
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
+
+import tensorflow.compat.v1 as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
+tf.disable_v2_behavior()
 
 from flask import Flask, render_template, redirect, url_for
 from infocrypt import infocrypt
