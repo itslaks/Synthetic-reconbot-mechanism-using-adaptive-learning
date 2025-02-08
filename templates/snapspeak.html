@@ -418,277 +418,387 @@
     </div>
 
     <script>
-        function previewImage(event) {
-            const imagePreview = document.getElementById('imagePreview');
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.innerHTML = `
-                        <div class="face-container">
-                            <img src="${e.target.result}" alt="Preview" id="previewImage">
-                        </div>`;
-                }
-                reader.readAsDataURL(file);
-            }
+       // Global variables for state management
+let currentImage = null;
+let analysisInProgress = false;
+
+// Constants
+const LOADING_MESSAGES = [
+    "Initializing analysis...",
+    "Processing image data...",
+    "Analyzing visual elements...",
+    "Detecting faces...",
+    "Analyzing color patterns...",
+    "Extracting metadata...",
+    "Generating image caption...",
+    "Checking for hidden content...",
+    "Finalizing results..."
+];
+
+const LOADING_INTERVALS = {
+    messageUpdate: 1500,
+    progressUpdate: 100
+};
+
+// Utility Functions
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function getFileExtension(filename) {
+    return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
+}
+
+// Image Preview Handling
+function previewImage(event) {
+    const imagePreview = document.getElementById('imagePreview');
+    const file = event.target.files[0];
+    
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+        alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+        return;
+    }
+    
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+        alert('File size exceeds 10MB limit');
+        return;
+    }
+    
+    currentImage = file;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        imagePreview.innerHTML = `
+            <div class="face-container">
+                <img src="${e.target.result}" alt="Preview" id="previewImage">
+            </div>
+            <div class="image-info">
+                <p>File: ${file.name}</p>
+                <p>Size: ${formatBytes(file.size)}</p>
+                <p>Type: ${file.type}</p>
+            </div>`;
+    };
+    reader.readAsDataURL(file);
+}
+
+// Loading Animation Management
+function updateLoadingProgress(startTime, totalEstimatedTime) {
+    const loadingBar = document.getElementById('loadingBar');
+    const loadingText = document.getElementById('loadingText');
+    const elapsedTime = Date.now() - startTime;
+    const progress = Math.min((elapsedTime / totalEstimatedTime) * 100, 95);
+    
+    loadingBar.style.width = `${progress}%`;
+    const messageIndex = Math.floor((progress / 95) * (LOADING_MESSAGES.length - 1));
+    loadingText.innerText = LOADING_MESSAGES[messageIndex];
+    
+    return progress < 95;
+}
+
+// Results Display Functions
+function displayFaceDetection(faceData, imageElement) {
+    if (!faceData || !faceData.locations || !imageElement) return;
+
+    const container = imageElement.parentElement;
+    const existingBoxes = container.querySelectorAll('.face-box');
+    existingBoxes.forEach(box => box.remove());
+
+    const scaleX = imageElement.clientWidth / imageElement.naturalWidth;
+    const scaleY = imageElement.clientHeight / imageElement.naturalHeight;
+
+    faceData.locations.forEach(face => {
+        const box = document.createElement('div');
+        box.className = 'face-box';
+        
+        const scaledX = face.x * scaleX;
+        const scaledY = face.y * scaleY;
+        const scaledWidth = face.width * scaleX;
+        const scaledHeight = face.height * scaleY;
+
+        Object.assign(box.style, {
+            left: `${scaledX}px`,
+            top: `${scaledY}px`,
+            width: `${scaledWidth}px`,
+            height: `${scaledHeight}px`
+        });
+
+        if (face.confidence) {
+            box.setAttribute('title', `Confidence: ${(face.confidence * 100).toFixed(1)}%`);
         }
 
-        async function analyzeImage() {
-            const fileInput = document.getElementById('imageInput');
-            const resultsSection = document.getElementById('resultsSection');
-            const loadingDiv = document.querySelector('.loading');
-            const loadingBar = document.getElementById('loadingBar');
-            const loadingText = document.getElementById('loadingText');
+        container.appendChild(box);
+    });
+}
 
-            if (!fileInput.files[0]) {
-                alert("Please select an image first.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            resultsSection.innerHTML = "";
-            loadingDiv.style.display = "block";
-            loadingBar.style.width = '0%';
-
-            const startTime = Date.now();
-            const totalEstimatedTime = 15000; // 15 seconds estimated processing time
-            let progressInterval;
-
-            const loadingMessages = [
-                "Initializing analysis...",
-                "Analyzing image composition...",
-                "Detecting faces and objects...",
-                "Analyzing color patterns...",
-                "Extracting metadata...",
-                "Checking for hidden content...",
-                "Processing results..."
-            ];
-
-            try {
-                // Start progress updates
-                let currentProgress = 0;
-                let currentMessageIndex = 0;
-                
-                progressInterval = setInterval(() => {
-                    const elapsedTime = Date.now() - startTime;
-                    currentProgress = Math.min((elapsedTime / totalEstimatedTime) * 100, 95);
-                    loadingBar.style.width = `${currentProgress}%`;
-                    
-                    currentMessageIndex = Math.floor((currentProgress / 95) * (loadingMessages.length - 1));
-                    loadingText.innerText = loadingMessages[currentMessageIndex];
-                }, 100);
-
-                const response = await fetch('/snapspeak_ai/api/analyze/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                clearInterval(progressInterval);
-                loadingBar.style.width = '100%';
-                loadingText.innerText = "Analysis complete!";
-
-                setTimeout(() => {
-                    loadingDiv.style.display = "none";
-                    displayResults(result);
-                }, 500);
-
-            } catch (error) {
-                clearInterval(progressInterval);
-                loadingDiv.style.display = "none";
-                resultsSection.innerHTML = `
-                    <div class="result-item">
-                        <div class="result-title">Error</div>
-                        <div class="result-content processing-error">
-                            <i class="fas fa-exclamation-triangle"></i> ${error.message}
-                        </div>
-                    </div>`;
-                console.error('Error:', error);
-            }
-        }
-
-        function displayResults(result) {
-            const resultsSection = document.getElementById('resultsSection');
-            resultsSection.innerHTML = "";
-
-            // Caption
-            addResultItem(
-                resultsSection,
-                "Image Caption",
-                result.caption || "No caption generated.",
-                "A brief description of what's in the image, generated by AI."
-            );
-
-            // Face Detection
-            
-            // Steganography
-            if (result.steganography) {
-                const confidence = result.steganography.confidence || 0;
-                const detectionStatus = result.steganography.detected ? 
-                    `<span style="color: var(--error-color);">Detected</span>` : 
-                    `<span style="color: var(--success-color);">Not Detected</span>`;
-                
-                const steganographyContent = `
-                    <p><strong>Hidden Content:</strong> ${detectionStatus}</p>
-                    <div class="confidence-meter">
-                        <div class="confidence-bar" style="width: ${confidence}%; 
-                            background-color: ${confidence > 70 ? 'var(--error-color)' : 'var(--success-color)'}">
-                        </div>
-                        <span class="confidence-text">Confidence: ${confidence.toFixed(1)}%</span>
+function displayColorAnalysis(colors) {
+    if (!colors || !colors.length) return '';
+    
+    return `
+        <div class="color-palette">
+            ${colors.map(color => `
+                <div class="color-info">
+                    <div class="color-box" style="background-color: ${color.hex}"></div>
+                    <div class="color-details">
+                        <div class="color-value"><strong>HEX:</strong> ${color.hex}</div>
+                        <div class="color-value"><strong>RGB:</strong> ${color.rgb}</div>
+                        <div class="color-value"><strong>Percentage:</strong> ${color.percentage}%</div>
                     </div>
-                    ${result.steganography.methods?.length > 0 ? `
-                        <p><strong>Detection Methods:</strong> ${result.steganography.methods.join(", ")}</p>
-                    ` : ''}
-                `;
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
 
-                addResultItem(
-                    resultsSection,
-                    "Hidden Content Analysis",
-                    steganographyContent,
-                    "Analysis for potential hidden messages or data within the image."
-                );
+function displaySteganographyResults(stegData) {
+    if (!stegData) return '';
+    
+    const confidence = stegData.confidence || 0;
+    const detectionStatus = stegData.detected ? 
+        `<span style="color: var(--error-color);">Detected</span>` : 
+        `<span style="color: var(--success-color);">Not Detected</span>`;
+    
+    return `
+        <div class="steg-analysis">
+            <p><strong>Hidden Content:</strong> ${detectionStatus}</p>
+            <div class="confidence-meter">
+                <div class="confidence-bar" style="width: ${confidence}%; 
+                    background-color: ${confidence > 70 ? 'var(--error-color)' : 'var(--success-color)'}">
+                </div>
+                <span class="confidence-text">Confidence: ${confidence.toFixed(1)}%</span>
+            </div>
+            ${stegData.methods?.length > 0 ? `
+                <p><strong>Detection Methods:</strong> ${stegData.methods.join(", ")}</p>
+            ` : ''}
+            ${stegData.hidden_pixels ? `
+                <p><strong>Hidden Pixels Found:</strong> ${stegData.hidden_pixels}</p>
+            ` : ''}
+        </div>
+    `;
+}
+
+// Main Analysis Function
+async function analyzeImage() {
+    if (analysisInProgress) return;
+    
+    const fileInput = document.getElementById('imageInput');
+    const resultsSection = document.getElementById('resultsSection');
+    const loadingDiv = document.querySelector('.loading');
+    
+    if (!currentImage) {
+        alert("Please select an image first.");
+        return;
+    }
+    
+    analysisInProgress = true;
+    resultsSection.innerHTML = "";
+    loadingDiv.style.display = "block";
+    
+    const startTime = Date.now();
+    const totalEstimatedTime = 15000; // 15 seconds estimated processing time
+    
+    const progressInterval = setInterval(() => {
+        const shouldContinue = updateLoadingProgress(startTime, totalEstimatedTime);
+        if (!shouldContinue) clearInterval(progressInterval);
+    }, LOADING_INTERVALS.progressUpdate);
+
+    try {
+        const formData = new FormData();
+        formData.append('file', currentImage);
+
+        const response = await fetch('/snapspeak_ai/api/analyze/', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`Analysis failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        
+        // Complete loading animation
+        clearInterval(progressInterval);
+        document.getElementById('loadingBar').style.width = '100%';
+        document.getElementById('loadingText').innerText = "Analysis complete!";
+        
+        // Display results after a short delay
+        setTimeout(() => {
+            loadingDiv.style.display = "none";
+            displayResults(result);
+            
+            // Update face boxes if faces were detected
+            if (result.faces && result.faces.locations) {
+                const imageElement = document.getElementById('previewImage');
+                displayFaceDetection(result.faces, imageElement);
             }
+        }, 500);
 
-            // Dominant Colors
-            if (result.dominant_colors && result.dominant_colors.length > 0) {
-        const colorsContent = `
-            <div class="color-palette">
-                ${result.dominant_colors.map(color => `
-                    <div class="color-info">
-                        <div class="color-box" style="background-color: ${color.hex}"></div>
-                        <div class="color-details">
-                            <div class="color-value"><strong>HEX:</strong> ${color.hex}</div>
-                            <div class="color-value"><strong>RGB:</strong> ${color.rgb}</div>
-                            <div class="color-value"><strong>Percentage:</strong> ${color.percentage}%</div>
-                        </div>
+    } catch (error) {
+        clearInterval(progressInterval);
+        loadingDiv.style.display = "none";
+        resultsSection.innerHTML = `
+            <div class="result-item">
+                <div class="result-title">Error</div>
+                <div class="result-content processing-error">
+                    <i class="fas fa-exclamation-triangle"></i> ${error.message}
+                </div>
+            </div>`;
+        console.error('Analysis error:', error);
+    } finally {
+        analysisInProgress = false;
+    }
+}
+
+// Results Display Management
+function displayResults(result) {
+    const resultsSection = document.getElementById('resultsSection');
+    resultsSection.innerHTML = "";
+
+    // Image Caption
+    if (result.caption) {
+        addResultItem(
+            resultsSection,
+            "Image Caption",
+            `<p>${result.caption}</p>`,
+            "AI-generated description of the image content."
+        );
+    }
+
+    // Face Detection Results
+    if (result.faces && result.faces.count > 0) {
+        const faceContent = `
+            <p><strong>Faces Detected:</strong> ${result.faces.count}</p>
+            <div class="face-detection-info">
+                ${result.faces.locations.map((face, index) => `
+                    <div class="face-detail">
+                        <p>Face ${index + 1}</p>
+                        <p>Confidence: ${(face.confidence * 100).toFixed(1)}%</p>
+                        <p>Detector: ${face.detector}</p>
                     </div>
                 `).join('')}
             </div>
         `;
+        addResultItem(
+            resultsSection,
+            "Face Detection",
+            faceContent,
+            "Analysis of detected faces in the image."
+        );
+    }
 
+    // Steganography Analysis
+    if (result.steganography) {
+        addResultItem(
+            resultsSection,
+            "Hidden Content Analysis",
+            displaySteganographyResults(result.steganography),
+            "Analysis for potential hidden messages or data within the image."
+        );
+    }
+
+    // Color Analysis
+    if (result.dominant_colors && result.dominant_colors.length > 0) {
         addResultItem(
             resultsSection,
             "Color Analysis",
-            colorsContent,
+            displayColorAnalysis(result.dominant_colors),
             "Breakdown of the dominant colors present in the image."
         );
     }
-            // Metadata
-            if (result.metadata) {
-                const metadataContent = `
-                    <div class="metadata-container">
-                        ${formatMetadata(result.metadata)}
-                    </div>
-                `;
-                addResultItem(
-                    resultsSection,
-                    "Technical Metadata",
-                    metadataContent,
-                    "Technical information embedded in the image file."
-                );
-            }
 
-            // Image Hash
-            if (result.image_hash) {
-                addResultItem(
-                    resultsSection,
-                    "Image Fingerprint",
-                    `<code>${result.image_hash}</code>`,
-                    "A unique identifier generated from the image content."
-                );
-            }
+    // Metadata
+    if (result.metadata && Object.keys(result.metadata).length > 0) {
+        addResultItem(
+            resultsSection,
+            "Technical Metadata",
+            `<div class="metadata-container">${formatMetadata(result.metadata)}</div>`,
+            "Technical information embedded in the image file."
+        );
+    }
 
-            // Processing Time
-            if (result.processing_time) {
-                addResultItem(
-                    resultsSection,
-                    "Analysis Performance",
-                    `<i class="fas fa-clock"></i> ${result.processing_time.toFixed(2)} seconds`,
-                    "Total time taken to complete the image analysis."
-                );
-            }
-        }
+    // Image Hash
+    if (result.image_hash) {
+        addResultItem(
+            resultsSection,
+            "Image Fingerprint",
+            `<div class="hash-info">
+                <p><strong>Perceptual Hash:</strong> <code>${result.image_hash}</code></p>
+                ${result.sha256_digest ? `
+                    <p><strong>SHA-256:</strong> <code>${result.sha256_digest}</code></p>
+                ` : ''}
+            </div>`,
+            "Unique identifiers generated from the image content."
+        );
+    }
 
-        function formatMetadata(metadata) {
-            if (!metadata || Object.keys(metadata).length === 0) {
-                return "No metadata found.";
-            }
+    // Processing Time
+    if (result.processing_time) {
+        addResultItem(
+            resultsSection,
+            "Analysis Performance",
+            `<i class="fas fa-clock"></i> ${result.processing_time.toFixed(2)} seconds`,
+            "Total time taken to complete the image analysis."
+        );
+    }
+}
 
-            return Object.entries(metadata)
-                .map(([key, value]) => {
-                    const formattedValue = typeof value === 'object' ? 
-                        `<pre>${JSON.stringify(value, null, 2)}</pre>` : 
-                        value;
-                    return `
-                        <div class="metadata-item">
-                            <strong>${key}:</strong> 
-                            <span>${formattedValue}</span>
-                        </div>
-                    `;
-                }).join('');
-        }
+// Utility function to format metadata
+function formatMetadata(metadata) {
+    if (!metadata || Object.keys(metadata).length === 0) {
+        return "No metadata found.";
+    }
 
-        function drawFaceBoxes(locations) {
-            const container = document.querySelector('.face-container');
-            if (!container) return;
-
-            // Remove existing face boxes
-            const existingBoxes = document.querySelectorAll('.face-box');
-            existingBoxes.forEach(box => box.remove());
-
-            const img = document.getElementById('previewImage');
-            if (!img) return;
-
-            // Calculate scaling factors
-            const displayedWidth = img.clientWidth;
-            const displayedHeight = img.clientHeight;
-            const scaleX = displayedWidth / img.naturalWidth;
-            const scaleY = displayedHeight / img.naturalHeight;
-
-            // Add face boxes
-            locations.forEach(loc => {
-                const box = document.createElement('div');
-                box.className = 'face-box';
-                
-                const scaledX = loc.x * scaleX;
-                const scaledY = loc.y * scaleY;
-                const scaledWidth = loc.width * scaleX;
-                const scaledHeight = loc.height * scaleY;
-
-                box.style.left = `${scaledX}px`;
-                box.style.top = `${scaledY}px`;
-                box.style.width = `${scaledWidth}px`;
-                box.style.height = `${scaledHeight}px`;
-
-                container.appendChild(box);
-            });
-        }
-
-        function addResultItem(parent, title, content, description) {
-            const item = document.createElement("div");
-            item.className = "result-item";
-            item.innerHTML = `
-                <div class="result-title">${title}</div>
-                <div class="result-content">${content}</div>
-                ${description ? `<div class="result-description">${description}</div>` : ''}
+    return Object.entries(metadata)
+        .map(([key, value]) => {
+            const formattedValue = typeof value === 'object' ? 
+                `<pre>${JSON.stringify(value, null, 2)}</pre>` : 
+                value;
+            return `
+                <div class="metadata-item">
+                    <strong>${key}:</strong> 
+                    <span>${formattedValue}</span>
+                </div>
             `;
-            parent.appendChild(item);
-        }
+        }).join('');
+}
 
-        // Handle window resize for face boxes
-        window.addEventListener('resize', () => {
-            const faces = document.querySelector('.results-section [data-faces]');
-            if (faces) {
-                drawFaceBoxes(JSON.parse(faces.dataset.faces));
-            }
-        });
+// Utility function to add result items
+function addResultItem(parent, title, content, description) {
+    const item = document.createElement("div");
+    item.className = "result-item";
+    item.innerHTML = `
+        <div class="result-title">${title}</div>
+        <div class="result-content">${content}</div>
+        ${description ? `<div class="result-description">${description}</div>` : ''}
+    `;
+    parent.appendChild(item);
+}
+
+// Event Listeners
+window.addEventListener('load', () => {
+    document.getElementById('imageInput').addEventListener('change', previewImage);
+    document.getElementById('analyzeBtn').addEventListener('click', analyzeImage);
+});
+
+// Handle window resize for face boxes
+window.addEventListener('resize', () => {
+    const imageElement = document.getElementById('previewImage');
+    const faces = document.querySelector('.results-section [data-faces]');
+    if (faces && imageElement) {
+        displayFaceDetection(JSON.parse(faces.dataset.faces), imageElement);
+    }
+});
     </script>
 </body>
 </html>
