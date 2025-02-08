@@ -2,25 +2,27 @@ from flask import Blueprint, request, jsonify, render_template, current_app
 from flask_cors import CORS
 from transformers import BlipForConditionalGeneration, BlipProcessor, logging
 import torch
-from PIL import Image
+from PIL import Image, ExifTags
 from PIL.ExifTags import TAGS, GPSTAGS
 import io
 import time
 import imagehash
 import traceback
 import warnings
-from collections import Counter
 import cv2
 import numpy as np
 import binascii
 from sklearn.cluster import KMeans
+import hashlib
+import os
+from collections import Counter
 import requests
-from io import BytesIO
 
 # Suppress warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 logging.set_verbosity_error()
 
+# Blueprint setup
 snapspeak_ai = Blueprint('snapspeak_ai', __name__, template_folder='templates')
 CORS(snapspeak_ai)
 
@@ -28,8 +30,9 @@ CORS(snapspeak_ai)
 FACE_DETECTION_CONFIDENCE_THRESHOLD = 0.85
 COLOR_CLUSTER_COUNT = 5
 IMAGE_RESIZE_DIMENSION = 150
+DARK_PIXEL_THRESHOLD = 10
 
-# Initialize models can also change model for your preferences
+# Initialize models
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large").to(device)
 processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
@@ -40,7 +43,7 @@ try:
     DEEPFACE_AVAILABLE = True
 except ImportError:
     DEEPFACE_AVAILABLE = False
-    print("Warning: DeepFace not available. Installing required packages...")
+    print("Warning: DeepFace not available")
 
 def get_labeled_gps(gps_info):
     """Convert GPS information to readable format"""
@@ -73,14 +76,6 @@ def format_binary_data(data):
             return f"HEX: {binascii.hexlify(data).decode('ascii')}"
     return str(data)
 
-def format_metadata(metadata):
-    """Format metadata into readable format"""
-    formatted_metadata = {}
-    for key, value in metadata.items():
-        if value is not None:
-            formatted_metadata[key] = {k: format_binary_data(v) for k, v in value.items()} if isinstance(value, dict) else format_binary_data(value)
-    return formatted_metadata
-
 def metadata_analysis(image):
     """Extract and analyze image metadata"""
     try:
@@ -104,7 +99,11 @@ def metadata_analysis(image):
 
         # Get ICC Profile information
         if 'icc_profile' in image.info:
-            exif_data['ICC_Profile'] = "Present"
+            exif_data['ICC_Profile'] = format_binary_data(image.info['icc_profile'])
+
+        # Extract quantization tables if available
+        if hasattr(image, "quantization"):
+            exif_data['Quantization_Tables'] = image.quantization
 
         # Add additional image info
         for key, value in image.info.items():
@@ -121,7 +120,7 @@ def metadata_analysis(image):
                 'Color_Range': str(image.getextrema())
             })
 
-        return format_metadata(exif_data)
+        return {k: format_binary_data(v) for k, v in exif_data.items()}
     except Exception as e:
         print(f"Error in metadata analysis: {str(e)}")
         return {}
@@ -129,10 +128,8 @@ def metadata_analysis(image):
 def enhanced_face_detection(image):
     """Enhanced face detection using DeepFace or OpenCV fallback"""
     try:
-        # Convert PIL Image to numpy array
         np_image = np.array(image)
         
-        # Convert to RGB if needed
         if len(np_image.shape) == 2:
             np_image = cv2.cvtColor(np_image, cv2.COLOR_GRAY2RGB)
         elif np_image.shape[2] == 4:
@@ -142,7 +139,6 @@ def enhanced_face_detection(image):
 
         if DEEPFACE_AVAILABLE:
             try:
-                # Use DeepFace with RetinaFace backend
                 faces = DeepFace.extract_faces(
                     np_image,
                     detector_backend='retinaface',
@@ -167,7 +163,6 @@ def enhanced_face_detection(image):
                 DEEPFACE_AVAILABLE = False
 
         if not DEEPFACE_AVAILABLE:
-            # Fallback to OpenCV Haar Cascade
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             gray = cv2.cvtColor(np_image, cv2.COLOR_RGB2GRAY)
             
@@ -210,27 +205,21 @@ def color_analysis(image):
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Resize image for faster processing
         thumb = image.copy()
         thumb.thumbnail((IMAGE_RESIZE_DIMENSION, IMAGE_RESIZE_DIMENSION))
         
-        # Convert to numpy array and reshape for K-means
         pixels = np.array(thumb).reshape(-1, 3)
         
-        # Perform K-means clustering
         kmeans = KMeans(n_clusters=COLOR_CLUSTER_COUNT, random_state=0, n_init=10)
         kmeans.fit(pixels)
         
-        # Get colors and their counts
         colors = kmeans.cluster_centers_
         labels = kmeans.labels_
         counts = np.bincount(labels)
         
-        # Calculate percentages and format colors
         total_pixels = sum(counts)
         color_info = []
         
-        # Sort colors by frequency
         sorted_indices = np.argsort(counts)[::-1]
         
         for idx in sorted_indices:
@@ -250,7 +239,7 @@ def color_analysis(image):
         return []
 
 def detect_steganography(image):
-    """Detect potential steganography in image"""
+    """Advanced steganography detection"""
     try:
         if image.mode != 'RGB':
             image = image.convert('RGB')
@@ -262,20 +251,28 @@ def detect_steganography(image):
         lsb_entropy = cv2.calcHist([lsb.ravel()], [0], None, [2], [0, 2])
         lsb_entropy = float(sum(-p * np.log2(p + 1e-10) for p in lsb_entropy))
         
+        # Analyze hidden pixels
+        gray_image = cv2.cvtColor(pixels, cv2.COLOR_RGB2GRAY)
+        hidden_pixel_count = int(np.sum(gray_image < DARK_PIXEL_THRESHOLD))
+        
         threshold = 0.97
         confidence = min((lsb_entropy / threshold) * 100, 100)
         
         return {
             'detected': lsb_entropy > threshold,
             'confidence': float(confidence),
-            'methods': ['LSB Analysis'] if lsb_entropy > threshold else []
+            'methods': ['LSB Analysis'] if lsb_entropy > threshold else [],
+            'hidden_pixels': hidden_pixel_count,
+            'hidden_pixel_threshold': DARK_PIXEL_THRESHOLD
         }
     except Exception as e:
         print(f"Error in steganography detection: {str(e)}")
         return {
             'detected': False,
             'confidence': 0,
-            'methods': []
+            'methods': [],
+            'hidden_pixels': 0,
+            'error': str(e)
         }
 
 @torch.no_grad()
@@ -289,8 +286,16 @@ def generate_caption(image):
         print(f"Error in caption generation: {str(e)}")
         return "Error generating caption"
 
+def generate_image_digest(image_bytes):
+    """Generate SHA-256 hash of the image"""
+    try:
+        return hashlib.sha256(image_bytes).hexdigest()
+    except Exception as e:
+        print(f"Error generating image digest: {str(e)}")
+        return None
+
 def image_hash(image):
-    """Generate image hash"""
+    """Generate perceptual hash"""
     return str(imagehash.average_hash(image))
 
 @snapspeak_ai.route('/')
@@ -321,6 +326,7 @@ def analyze_image():
             'caption': generate_caption(image),
             'metadata': metadata_analysis(image),
             'image_hash': image_hash(image),
+            'sha256_digest': generate_image_digest(image_bytes),
             'dominant_colors': color_analysis(image),
             'faces': enhanced_face_detection(image),
             'steganography': detect_steganography(image),
