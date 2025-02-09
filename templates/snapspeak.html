@@ -165,6 +165,112 @@
             font-weight: bold;
         }
 
+        /* Add these styles to your existing CSS */
+
+.caption-text {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    font-style: italic;
+    color: var(--text-color);
+    padding: 1rem;
+    background: rgba(127, 255, 212, 0.05);
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.metadata-item {
+    background: rgba(127, 255, 212, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.metadata-key {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.metadata-value {
+    word-break: break-word;
+}
+
+.metadata-value pre {
+    background: var(--bg-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.hash-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.hash-item {
+    background: rgba(127, 255, 212, 0.05);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.hash-code {
+    display: block;
+    padding: 0.5rem;
+    background: var(--bg-color);
+    border-radius: 4px;
+    word-break: break-all;
+    margin-top: 0.5rem;
+    font-family: monospace;
+}
+
+.processing-time {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.time-value {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+.detected {
+    color: var(--error-color);
+    font-weight: bold;
+}
+
+.not-detected {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.detection-methods ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+}
+
+.detection-methods li {
+    padding: 0.5rem;
+    background: rgba(127, 255, 212, 0.05);
+    margin: 0.5rem 0;
+    border-radius: 4px;
+}
+
+.pixel-analysis {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(127, 255, 212, 0.05);
+    border-radius: 8px;
+}
+
         .results-section {
             background-color: var(--accent-color);
             border-radius: 15px;
@@ -440,6 +546,11 @@ const LOADING_INTERVALS = {
     progressUpdate: 100
 };
 
+const FILE_CONSTRAINTS = {
+    maxSize: 10 * 1024 * 1024, // 10MB
+    validTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+};
+
 // Utility Functions
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -454,42 +565,55 @@ function getFileExtension(filename) {
     return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
 }
 
+function validateFile(file) {
+    if (!file) {
+        throw new Error("No file selected");
+    }
+    
+    if (!FILE_CONSTRAINTS.validTypes.includes(file.type)) {
+        throw new Error('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+    }
+    
+    if (file.size > FILE_CONSTRAINTS.maxSize) {
+        throw new Error('File size exceeds 10MB limit');
+    }
+    
+    return true;
+}
+
 // Image Preview Handling
 function previewImage(event) {
     const imagePreview = document.getElementById('imagePreview');
     const file = event.target.files[0];
     
-    if (!file) return;
-    
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-        alert('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
-        return;
+    try {
+        validateFile(file);
+        currentImage = file;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            imagePreview.innerHTML = `
+                <div class="face-container">
+                    <img src="${e.target.result}" alt="Preview" id="previewImage">
+                </div>
+                <div class="image-info">
+                    <p><i class="fas fa-file-image"></i> File: ${file.name}</p>
+                    <p><i class="fas fa-weight-hanging"></i> Size: ${formatBytes(file.size)}</p>
+                    <p><i class="fas fa-file-code"></i> Type: ${file.type}</p>
+                </div>`;
+        };
+        reader.readAsDataURL(file);
+        
+        // Enable analyze button
+        document.getElementById('analyzeBtn').disabled = false;
+        
+    } catch (error) {
+        alert(error.message);
+        event.target.value = ''; // Reset file input
+        imagePreview.innerHTML = '';
+        currentImage = null;
+        document.getElementById('analyzeBtn').disabled = true;
     }
-    
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-    if (file.size > maxSize) {
-        alert('File size exceeds 10MB limit');
-        return;
-    }
-    
-    currentImage = file;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        imagePreview.innerHTML = `
-            <div class="face-container">
-                <img src="${e.target.result}" alt="Preview" id="previewImage">
-            </div>
-            <div class="image-info">
-                <p>File: ${file.name}</p>
-                <p>Size: ${formatBytes(file.size)}</p>
-                <p>Type: ${file.type}</p>
-            </div>`;
-    };
-    reader.readAsDataURL(file);
 }
 
 // Loading Animation Management
@@ -506,7 +630,7 @@ function updateLoadingProgress(startTime, totalEstimatedTime) {
     return progress < 95;
 }
 
-// Results Display Functions
+// Face Detection Display
 function displayFaceDetection(faceData, imageElement) {
     if (!faceData || !faceData.locations || !imageElement) return;
 
@@ -517,7 +641,7 @@ function displayFaceDetection(faceData, imageElement) {
     const scaleX = imageElement.clientWidth / imageElement.naturalWidth;
     const scaleY = imageElement.clientHeight / imageElement.naturalHeight;
 
-    faceData.locations.forEach(face => {
+    faceData.locations.forEach((face, index) => {
         const box = document.createElement('div');
         box.className = 'face-box';
         
@@ -533,72 +657,26 @@ function displayFaceDetection(faceData, imageElement) {
             height: `${scaledHeight}px`
         });
 
+        // Add face number label
+        const label = document.createElement('div');
+        label.className = 'face-label';
+        label.textContent = `Face ${index + 1}`;
+        box.appendChild(label);
+
         if (face.confidence) {
-            box.setAttribute('title', `Confidence: ${(face.confidence * 100).toFixed(1)}%`);
+            box.setAttribute('title', `Face ${index + 1} - Confidence: ${(face.confidence * 100).toFixed(1)}%`);
         }
 
         container.appendChild(box);
     });
 }
 
-function displayColorAnalysis(colors) {
-    if (!colors || !colors.length) return '';
-    
-    return `
-        <div class="color-palette">
-            ${colors.map(color => `
-                <div class="color-info">
-                    <div class="color-box" style="background-color: ${color.hex}"></div>
-                    <div class="color-details">
-                        <div class="color-value"><strong>HEX:</strong> ${color.hex}</div>
-                        <div class="color-value"><strong>RGB:</strong> ${color.rgb}</div>
-                        <div class="color-value"><strong>Percentage:</strong> ${color.percentage}%</div>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-function displaySteganographyResults(stegData) {
-    if (!stegData) return '';
-    
-    const confidence = stegData.confidence || 0;
-    const detectionStatus = stegData.detected ? 
-        `<span style="color: var(--error-color);">Detected</span>` : 
-        `<span style="color: var(--success-color);">Not Detected</span>`;
-    
-    return `
-        <div class="steg-analysis">
-            <p><strong>Hidden Content:</strong> ${detectionStatus}</p>
-            <div class="confidence-meter">
-                <div class="confidence-bar" style="width: ${confidence}%; 
-                    background-color: ${confidence > 70 ? 'var(--error-color)' : 'var(--success-color)'}">
-                </div>
-                <span class="confidence-text">Confidence: ${confidence.toFixed(1)}%</span>
-            </div>
-            ${stegData.methods?.length > 0 ? `
-                <p><strong>Detection Methods:</strong> ${stegData.methods.join(", ")}</p>
-            ` : ''}
-            ${stegData.hidden_pixels ? `
-                <p><strong>Hidden Pixels Found:</strong> ${stegData.hidden_pixels}</p>
-            ` : ''}
-        </div>
-    `;
-}
-
 // Main Analysis Function
 async function analyzeImage() {
-    if (analysisInProgress) return;
+    if (analysisInProgress || !currentImage) return;
     
-    const fileInput = document.getElementById('imageInput');
     const resultsSection = document.getElementById('resultsSection');
     const loadingDiv = document.querySelector('.loading');
-    
-    if (!currentImage) {
-        alert("Please select an image first.");
-        return;
-    }
     
     analysisInProgress = true;
     resultsSection.innerHTML = "";
@@ -647,20 +725,31 @@ async function analyzeImage() {
     } catch (error) {
         clearInterval(progressInterval);
         loadingDiv.style.display = "none";
-        resultsSection.innerHTML = `
-            <div class="result-item">
-                <div class="result-title">Error</div>
-                <div class="result-content processing-error">
-                    <i class="fas fa-exclamation-triangle"></i> ${error.message}
-                </div>
-            </div>`;
+        displayError(error);
         console.error('Analysis error:', error);
     } finally {
         analysisInProgress = false;
     }
 }
 
-// Results Display Management
+// Error Display
+function displayError(error) {
+    const resultsSection = document.getElementById('resultsSection');
+    resultsSection.innerHTML = `
+        <div class="result-item error-item">
+            <div class="result-title">
+                <i class="fas fa-exclamation-triangle"></i> Error
+            </div>
+            <div class="result-content processing-error">
+                ${error.message}
+            </div>
+            <div class="result-description">
+                Please try again or contact support if the problem persists.
+            </div>
+        </div>`;
+}
+
+// Results Display
 function displayResults(result) {
     const resultsSection = document.getElementById('resultsSection');
     resultsSection.innerHTML = "";
@@ -670,24 +759,53 @@ function displayResults(result) {
         addResultItem(
             resultsSection,
             "Image Caption",
-            `<p>${result.caption}</p>`,
+            `<p class="caption-text">
+                <i class="fas fa-quote-left"></i> 
+                ${result.caption} 
+                <i class="fas fa-quote-right"></i>
+            </p>`,
             "AI-generated description of the image content."
         );
     }
 
     // Face Detection Results
-    if (result.faces && result.faces.count > 0) {
+    if (result.faces) {
         const faceContent = `
-            <p><strong>Faces Detected:</strong> ${result.faces.count}</p>
-            <div class="face-detection-info">
-                ${result.faces.locations.map((face, index) => `
-                    <div class="face-detail">
-                        <p>Face ${index + 1}</p>
-                        <p>Confidence: ${(face.confidence * 100).toFixed(1)}%</p>
-                        <p>Detector: ${face.detector}</p>
-                    </div>
-                `).join('')}
+            <div class="face-summary">
+                <h3>
+                    <i class="fas fa-user-check"></i> 
+                    ${result.faces.count} face${result.faces.count !== 1 ? 's' : ''} detected
+                </h3>
             </div>
+            ${result.faces.count > 0 ? `
+                <div class="face-detection-info">
+                    ${result.faces.locations.map((face, index) => `
+                        <div class="face-detail">
+                            <div class="face-detail-header">
+                                <i class="fas fa-user"></i> Face ${index + 1}
+                            </div>
+                            <div class="face-detail-content">
+                                <p>
+                                    <i class="fas fa-percentage"></i> 
+                                    Confidence: ${(face.confidence * 100).toFixed(1)}%
+                                </p>
+                                <p>
+                                    <i class="fas fa-camera"></i> 
+                                    Detector: ${face.detector}
+                                </p>
+                                <p>
+                                    <i class="fas fa-crosshairs"></i> 
+                                    Position: (${face.x}, ${face.y})
+                                </p>
+                                <p>
+                                    <i class="fas fa-expand"></i> 
+                                    Size: ${face.width}x${face.height}
+                                </p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<p class="no-faces">No faces detected in the image.</p>'}
         `;
         addResultItem(
             resultsSection,
@@ -699,106 +817,352 @@ function displayResults(result) {
 
     // Steganography Analysis
     if (result.steganography) {
+        const stegContent = `
+            <div class="steg-analysis">
+                <div class="steg-status ${result.steganography.detected ? 'detected' : 'clean'}">
+                    <i class="fas ${result.steganography.detected ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+                    <span>Hidden Content: ${result.steganography.detected ? 'Detected' : 'Not Detected'}</span>
+                </div>
+                
+                <div class="confidence-section">
+                    <div class="confidence-meter">
+                        <div class="confidence-bar" style="width: ${result.steganography.confidence}%"></div>
+                        <span class="confidence-text">
+                            ${result.steganography.confidence.toFixed(1)}% Confidence
+                        </span>
+                    </div>
+                </div>
+
+                ${result.steganography.methods?.length > 0 ? `
+                    <div class="detection-methods">
+                        <h4><i class="fas fa-search"></i> Detection Methods</h4>
+                        <ul>
+                            ${result.steganography.methods.map(method => 
+                                `<li><i class="fas fa-check"></i> ${method}</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <div class="pixel-analysis">
+                    <h4><i class="fas fa-microscope"></i> Pixel Analysis</h4>
+                    <p>
+                        <i class="fas fa-eye-slash"></i> 
+                        Hidden Pixels: ${result.steganography.hidden_pixels.toLocaleString()}
+                    </p>
+                    <p>
+                        <i class="fas fa-sort-numeric-down"></i> 
+                        Detection Threshold: ${result.steganography.hidden_pixel_threshold}
+                    </p>
+                </div>
+            </div>
+        `;
         addResultItem(
             resultsSection,
             "Hidden Content Analysis",
-            displaySteganographyResults(result.steganography),
+            stegContent,
             "Analysis for potential hidden messages or data within the image."
         );
     }
 
     // Color Analysis
     if (result.dominant_colors && result.dominant_colors.length > 0) {
+        const colorContent = `
+            <div class="color-summary">
+                <p>Detected ${result.dominant_colors.length} dominant colors</p>
+            </div>
+            <div class="color-palette">
+                ${result.dominant_colors.map(color => `
+                    <div class="color-info">
+                        <div class="color-box" style="background-color: ${color.hex}">
+                            <div class="color-percentage">${color.percentage}%</div>
+                        </div>
+                        <div class="color-details">
+                            <div class="color-value">
+                                <i class="fas fa-palette"></i> 
+                                HEX: ${color.hex}
+                            </div>
+                            <div class="color-value">
+                                <i class="fas fa-eye-dropper"></i> 
+                                RGB: ${color.rgb}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
         addResultItem(
             resultsSection,
             "Color Analysis",
-            displayColorAnalysis(result.dominant_colors),
+            colorContent,
             "Breakdown of the dominant colors present in the image."
         );
     }
 
     // Metadata
     if (result.metadata && Object.keys(result.metadata).length > 0) {
+        const metadataContent = `
+            <div class="metadata-container">
+                <div class="metadata-summary">
+                    <p>${Object.keys(result.metadata).length} metadata properties found</p>
+                </div>
+                <div class="metadata-grid">
+                    ${Object.entries(result.metadata).map(([key, value]) => `
+                        <div class="metadata-item">
+                            <div class="metadata-key">
+                                <i class="fas fa-info-circle"></i> 
+                                ${key}
+                            </div>
+                            <div class="metadata-value">
+                                ${typeof value === 'object' ? 
+                                    `<pre><code>${JSON.stringify(value, null, 2)}</code></pre>` : 
+                                    `<span>${value}</span>`}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
         addResultItem(
             resultsSection,
             "Technical Metadata",
-            `<div class="metadata-container">${formatMetadata(result.metadata)}</div>`,
+            metadataContent,
             "Technical information embedded in the image file."
         );
     }
 
-    // Image Hash
-    if (result.image_hash) {
+    // Image Hash and Digest
+    if (result.image_hash || result.sha256_digest) {
+        const hashContent = `
+            <div class="hash-info">
+                ${result.image_hash ? `
+                    <div class="hash-item">
+                        <div class="hash-title">
+                            <i class="fas fa-fingerprint"></i> 
+                            Perceptual Hash
+                        </div>
+                        <code class="hash-code">${result.image_hash}</code>
+                    </div>
+                ` : ''}
+                ${result.sha256_digest ? `
+                    <div class="hash-item">
+                        <div class="hash-title">
+                            <i class="fas fa-shield-alt"></i> 
+                            SHA-256 Digest
+                        </div>
+                        <code class="hash-code">${result.sha256_digest}</code>
+                        <div class="hash-description">
+                            Cryptographic hash unique to this image file
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
         addResultItem(
             resultsSection,
             "Image Fingerprint",
-            `<div class="hash-info">
-                <p><strong>Perceptual Hash:</strong> <code>${result.image_hash}</code></p>
-                ${result.sha256_digest ? `
-                    <p><strong>SHA-256:</strong> <code>${result.sha256_digest}</code></p>
-                ` : ''}
-            </div>`,
+            hashContent,
             "Unique identifiers generated from the image content."
         );
     }
 
     // Processing Time
-    if (result.processing_time) {
+    if (result.processing_time !== undefined) {
+        const timeContent = `
+            <div class="processing-time">
+                <div class="time-display">
+                    <i class="fas fa-clock"></i> 
+                    <span class="time-value">${result.processing_time.toFixed(2)}</span> 
+                    <span class="time-unit">seconds</span>
+                </div>
+                <div class="performance-indicator">
+                    ${getPerformanceIndicator(result.processing_time)}
+                </div>
+            </div>
+        `;
         addResultItem(
             resultsSection,
             "Analysis Performance",
-            `<i class="fas fa-clock"></i> ${result.processing_time.toFixed(2)} seconds`,
+            timeContent,
             "Total time taken to complete the image analysis."
         );
     }
+
+    // Add copy buttons for copyable content
+    addCopyButtons();
+    
+    // Add export functionality
+    addExportButton(result);
 }
 
-// Utility function to format metadata
-function formatMetadata(metadata) {
-    if (!metadata || Object.keys(metadata).length === 0) {
-        return "No metadata found.";
+// Utility function to get performance indicator
+function getPerformanceIndicator(time) {
+    if (time < 5) {
+        return '<span class="performance-good"><i class="fas fa-bolt"></i> Fast Analysis</span>';
+    } else if (time < 10) {
+        return '<span class="performance-medium"><i class="fas fa-clock"></i> Normal Speed</span>';
+    } else {
+        return '<span class="performance-slow"><i class="fas fa-hourglass-half"></i> Complex Analysis</span>';
     }
-
-    return Object.entries(metadata)
-        .map(([key, value]) => {
-            const formattedValue = typeof value === 'object' ? 
-                `<pre>${JSON.stringify(value, null, 2)}</pre>` : 
-                value;
-            return `
-                <div class="metadata-item">
-                    <strong>${key}:</strong> 
-                    <span>${formattedValue}</span>
-                </div>
-            `;
-        }).join('');
 }
 
-// Utility function to add result items
+// Add result item to the results section
 function addResultItem(parent, title, content, description) {
     const item = document.createElement("div");
     item.className = "result-item";
     item.innerHTML = `
-        <div class="result-title">${title}</div>
+        <div class="result-header">
+            <div class="result-title">${title}</div>
+            <div class="result-controls">
+                <button class="collapse-btn" title="Collapse/Expand">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+        </div>
         <div class="result-content">${content}</div>
         ${description ? `<div class="result-description">${description}</div>` : ''}
     `;
+
+    // Add collapse functionality
+    const collapseBtn = item.querySelector('.collapse-btn');
+    const contentDiv = item.querySelector('.result-content');
+    collapseBtn.addEventListener('click', () => {
+        contentDiv.classList.toggle('collapsed');
+        collapseBtn.querySelector('i').classList.toggle('fa-chevron-down');
+        collapseBtn.querySelector('i').classList.toggle('fa-chevron-up');
+    });
+
     parent.appendChild(item);
+}
+
+// Add copy buttons to copyable content
+function addCopyButtons() {
+    const copyableElements = document.querySelectorAll('.hash-code, .metadata-value pre');
+    copyableElements.forEach(element => {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+        copyBtn.title = 'Copy to clipboard';
+        
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(element.textContent);
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                copyBtn.innerHTML = '<i class="fas fa-times"></i>';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 2000);
+            }
+        });
+
+        element.parentElement.style.position = 'relative';
+        element.parentElement.appendChild(copyBtn);
+    });
+}
+
+// Add export functionality
+function addExportButton(result) {
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'export-btn';
+    exportBtn.innerHTML = '<i class="fas fa-download"></i> Export Results';
+    exportBtn.addEventListener('click', () => exportResults(result));
+    
+    const resultsSection = document.getElementById('resultsSection');
+    resultsSection.insertBefore(exportBtn, resultsSection.firstChild);
+}
+
+// Export results to JSON file
+function exportResults(result) {
+    const dataStr = JSON.stringify(result, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = `image-analysis-${new Date().toISOString()}.json`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
 }
 
 // Event Listeners
 window.addEventListener('load', () => {
-    document.getElementById('imageInput').addEventListener('change', previewImage);
-    document.getElementById('analyzeBtn').addEventListener('click', analyzeImage);
+    const imageInput = document.getElementById('imageInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    
+    imageInput.addEventListener('change', previewImage);
+    analyzeBtn.addEventListener('click', analyzeImage);
+    analyzeBtn.disabled = true; // Initially disabled until image is selected
+    
+    // Handle drag and drop
+    const dropZone = document.getElementById('imagePreview');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('drag-hover');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('drag-hover');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files.length) {
+            imageInput.files = files;
+            const event = new Event('change');
+            imageInput.dispatchEvent(event);
+        }
+    }
 });
 
 // Handle window resize for face boxes
-window.addEventListener('resize', () => {
+window.addEventListener('resize', debounce(() => {
     const imageElement = document.getElementById('previewImage');
     const faces = document.querySelector('.results-section [data-faces]');
     if (faces && imageElement) {
         displayFaceDetection(JSON.parse(faces.dataset.faces), imageElement);
     }
-});
+}, 250));
+
+// Debounce utility function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
     </script>
 </body>
 </html>
