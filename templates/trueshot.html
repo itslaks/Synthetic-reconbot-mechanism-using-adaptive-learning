@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrueShot AI - Advanced Image Analysis</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #40E0D0;
+            --primary-dark: #20B2AA;
+            --background: #111827;
+            --surface: #1F2937;
+            --surface-light: #374151;
+            --text: #F3F4F6;
+            --text-secondary: #9CA3AF;
+            --border: #4B5563;
+            --real: #34D399;
+            --ai-generated: #F87171;
+            --inconclusive: #FBBF24;
+            --glow: 0 0 15px rgba(64, 224, 208, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.4;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            border-bottom: 2px solid var(--primary);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            box-shadow: var(--glow);
+        }
+
+        .title {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            text-shadow: var(--glow);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .upload-section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--surface-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        .upload-icon {
+            color: var(--primary);
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        #imagePreview {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 12px;
+            display: none;
+            margin-top: 1.5rem;
+            border: 2px solid var(--surface-light);
+        }
+
+        .results-section {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .classification {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .real { 
+            background: rgba(52, 211, 153, 0.1);
+            color: var(--real);
+            border: 1px solid var(--real);
+        }
+
+        .ai-generated { 
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--ai-generated);
+            border: 1px solid var(--ai-generated);
+        }
+
+        .inconclusive { 
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--inconclusive);
+            border: 1px solid var(--inconclusive);
+        }
+
+        .confidence-bar {
+            height: 12px;
+            background: var(--surface-light);
+            border-radius: 6px;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .confidence-fill {
+            height: 100%;
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(64, 224, 208, 0.5);
+        }
+
+        .reasoning-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--surface-light);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .reasoning-section h3 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .reasoning-list li {
+            margin: 0.8rem 0;
+            padding-left: 1.8rem;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .reasoning-list li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(17, 24, 39, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--surface-light);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            box-shadow: var(--glow);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">TrueShot AI</h1>
+            <p class="subtitle">Advanced AI Image Authentication System</p>
+        </header>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="upload-area" id="dropZone">
+                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                    <h3>Drop image or click to upload</h3>
+                    <p style="color: var(--text-secondary); margin-top: 1rem;">
+                        Supports PNG, JPG, JPEG • Max size: 100MB
+                    </p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+                <img id="imagePreview" alt="Preview">
+            </div>
+
+            <div class="results-section" id="resultsContainer"></div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        class TrueShotAI {
+            constructor() {
+                this.initElements();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.dropZone = document.getElementById('dropZone');
+                this.fileInput = document.getElementById('fileInput');
+                this.imagePreview = document.getElementById('imagePreview');
+                this.resultsContainer = document.getElementById('resultsContainer');
+                this.loadingOverlay = document.getElementById('loadingOverlay');
+            }
+
+            bindEvents() {
+                this.dropZone.addEventListener('click', () => this.fileInput.click());
+                this.dropZone.addEventListener('dragover', this.handleDragOver.bind(this));
+                this.dropZone.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                this.dropZone.addEventListener('drop', this.handleDrop.bind(this));
+                this.fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                this.dropZone.style.borderColor = 'var(--primary)';
+                this.dropZone.style.boxShadow = 'var(--glow)';
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                this.dropZone.style.borderColor = '';
+                this.dropZone.style.boxShadow = '';
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                const file = e.dataTransfer.files[0];
+                if (file) this.handleFile(file);
+                this.dropZone.style.borderColor = '';
+                this.dropZone.style.boxShadow = '';
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) this.handleFile(file);
+            }
+
+            getClassification(confidence, prediction) {
+                if (confidence < 0.65) return 'inconclusive';
+                return prediction.toLowerCase().replace(' ', '-');
+            }
+
+            displayResults(data) {
+                const classification = this.getClassification(data.confidence, data.prediction);
+                const confidencePercent = (data.confidence * 100).toFixed(1);
+
+                const html = `
+                    <div class="classification ${classification}">
+                        ${classification === 'inconclusive' ? 'Inconclusive Result' : data.prediction}
+                    </div>
+                    
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" 
+                             style="width: ${confidencePercent}%; 
+                                    background: var(--${classification})">
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 1rem; color: var(--text-secondary);">
+                        Analysis Confidence: ${confidencePercent}%
+                    </div>
+
+                    <div class="reasoning-section">
+                        <h3>Analysis Reasoning:</h3>
+                        <ul class="reasoning-list">
+                            ${data.reasoning.map(reason => `<li>${reason}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                this.resultsContainer.innerHTML = html;
+                this.resultsContainer.style.display = 'block';
+            }
+
+            async handleFile(file) {
+                if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+                    alert('Please upload a supported image format (JPG, JPEG or PNG)');
+                    return;
+                }
+
+                if (file.size > 100 * 1024 * 1024) {
+                    alert('File size exceeds 100MB limit');
+                    return;
+                }
+
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.imagePreview.src = e.target.result;
+                        this.imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+
+                    this.loadingOverlay.style.display = 'flex';
+                    
+                    const formData = new FormData();
+                    formData.append('image', file);
+
+                    const response = await fetch('/trueshot_ai/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        this.displayResults(data.result);
+                    } else {
+                        throw new Error(data.message);
+                    }
+                } catch (error) {
+                    alert('Error analyzing image: ' + error.message);
+                } finally {
+                    this.loadingOverlay.style.display = 'none';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.trueShotAI = new TrueShotAI();
+        });
+    </script>
+</body>
+</html>
