@@ -1,22 +1,8 @@
+#server.py
+from try01 import *
 import os
 import warnings
 import logging
-
-# Suppress all warnings
-warnings.filterwarnings('ignore')
-
-# Suppress TensorFlow logs and warnings
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
-
-# Configure logging to suppress TensorFlow messages
-logging.getLogger('tensorflow').setLevel(logging.ERROR)
-
-import tensorflow.compat.v1 as tf
-tf.logging.set_verbosity(tf.logging.ERROR)
-tf.disable_v2_behavior()
-
 from flask import Flask, render_template, redirect, url_for
 from infocrypt import infocrypt
 from cybersentry_ai import cybersentry_ai
@@ -28,10 +14,29 @@ from filescanner import filescanner
 from infosight_ai import infosight_ai
 from snapspeak_ai import snapspeak_ai
 from enscan import enscan
+from trueshot import trueshot_ai
 
+# Suppress all warnings and logging except Werkzeug
+warnings.filterwarnings('ignore')
+
+# Suppress specific environment warnings
+os.environ['PYTHONWARNINGS'] = 'ignore'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
+
+# Disable all loggers except Werkzeug
+for log_name, log_obj in logging.Logger.manager.loggerDict.items():
+    if log_name != 'werkzeug':
+        if isinstance(log_obj, logging.Logger):
+            log_obj.setLevel(logging.ERROR)
+
+# Flask app initialization
 app = Flask(__name__, template_folder='static')
+app.logger.handlers = []
+app.logger.propagate = False
 
-# Quick blueprint registration
+# Rest of your code remains the same...
 blueprints = {
     '/infocrypt': infocrypt,
     '/cybersentry_ai': cybersentry_ai, 
@@ -42,7 +47,8 @@ blueprints = {
     '/filescanner': filescanner,
     '/infosight_ai': infosight_ai,
     '/snapspeak_ai': snapspeak_ai,
-    '/enscan': enscan
+    '/enscan': enscan,
+    '/trueshot_ai': trueshot_ai,
 }
 
 for prefix, blueprint in blueprints.items():
