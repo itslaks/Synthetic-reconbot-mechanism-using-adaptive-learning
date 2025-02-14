@@ -1,0 +1,3 @@
+https://drive.google.com/drive/folders/1XLEArc5VNSe1QPk9X8pVu8ZJ0mvbZnNY?usp=sharing
+
+the above link is ML model for trueshot_AI need to place this model in same folder as python files pasted.
