@@ -80,7 +80,7 @@ A Custom build Machine Learning Model for Image classification.
 - checks whether the uploaded image is AI or Real.
 - This ML model is based upon ResNet with 18 Layers.
 
-### 10. 🌐 **Webseeker** 
+### 11. 🌐 **Webseeker** 
 A web crawler module that extracts and indexes critical information from specified URLs, enabling:
 - The user needs to enter domain name or URL
 - then, want to select scan type
