@@ -307,7 +307,7 @@
 }
         let vtChart;
 
-function displayIpInfo(data) {
+        function displayIpInfo(data) {
     const ipInfo = document.getElementById('ipInfo');
     ipInfo.innerHTML = '';
 
@@ -315,6 +315,25 @@ function displayIpInfo(data) {
         ipInfo.innerHTML = `<div class="error">Error retrieving IP information: ${data?.error || 'No data available'}</div>`;
         return;
     }
+
+    // Format abuse contacts properly
+    const formatAbuseContacts = (contacts) => {
+        if (!contacts) return 'N/A';
+        if (typeof contacts === 'string') return contacts;
+        if (Array.isArray(contacts)) return contacts.join(', ');
+        if (typeof contacts === 'object') {
+            // Extract email and phone if available
+            const contactDetails = [];
+            if (contacts.email) contactDetails.push(`Email: ${contacts.email}`);
+            if (contacts.phone) contactDetails.push(`Phone: ${contacts.phone}`);
+            if (contactDetails.length === 0) {
+                // If no specific fields, try to get all values
+                return Object.values(contacts).filter(v => v).join(', ') || 'N/A';
+            }
+            return contactDetails.join(', ');
+        }
+        return 'N/A';
+    };
 
     const ipFields = {
         'Basic Information': {
@@ -339,7 +358,7 @@ function displayIpInfo(data) {
             'Registrar': data.whois?.registrar,
             'Creation Date': data.whois?.creation_date,
             'Privacy': data.privacy || 'N/A',
-            'Abuse Contacts': data.abuse || 'N/A'
+            'Abuse Contacts': formatAbuseContacts(data.abuse)
         }
     };
 
