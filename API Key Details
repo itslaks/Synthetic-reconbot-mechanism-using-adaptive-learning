@@ -2,9 +2,13 @@ List Of API Keys Required for complete INFOSIGHT all Applications:
 
 1) Infosight AI - 1) 1 Gemini API Key
                   2) 1 hugging-face API Key
+
 2) Lana AI - 1 Gemini API Key
+
 3) File Fender - 1 Virustotal API Key
+
 4) Cybersentry AI - 1 Gemini API Key
+
 5) webseeker - 1) 1 Virustotal API Key
                2) 1 IP Info API Key
                3) 1 abuse Ipdb API Key
