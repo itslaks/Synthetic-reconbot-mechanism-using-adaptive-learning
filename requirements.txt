@@ -4,9 +4,9 @@ flask-limiter
 google-generativeai
 fuzzywuzzy
 requests
-dns.resolver
+dnspython
 tldextract
-whois
+python-whois
 beautifulsoup4
 cryptography
 pyaudio
@@ -18,4 +18,12 @@ torch
 Pillow
 scipy
 opencv-python
-sklearn
+scikit-learn
+SpeechRecognition
+python-nmap
+validators
+pyOpenSSL
+imagehash
+torchvision
+tensorflow
+deepface
