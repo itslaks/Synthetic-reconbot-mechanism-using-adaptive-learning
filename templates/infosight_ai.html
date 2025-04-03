@@ -516,14 +516,14 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const API_ENDPOINT = '/infosight_ai'; // Updated to include blueprint prefix
-            
+            const API_ENDPOINT = '/infosight_ai';
+        
             const state = {
                 currentMode: 'text',
                 savedPrompts: JSON.parse(localStorage.getItem('savedPrompts') || '[]')
             };
         
-            // Elements
+            // UI Elements
             const menuBtns = document.querySelectorAll('.menu-btn');
             const generateBtn = document.getElementById('generate-btn');
             const clearBtn = document.getElementById('clear-btn');
@@ -553,14 +553,9 @@
             promptInput.addEventListener('input', () => {
                 const length = promptInput.value.length;
                 characterCount.textContent = `${length}/1000`;
-                if (length > 1000) {
-                    characterCount.style.color = 'var(--error)';
-                } else {
-                    characterCount.style.color = 'var(--text)';
-                }
+                characterCount.style.color = length > 1000 ? 'var(--error)' : 'var(--text)';
             });
         
-            // Copy and Download Handlers
             document.getElementById('copy-text').addEventListener('click', () => {
                 navigator.clipboard.writeText(generatedText.textContent)
                     .then(() => showNotification('Text copied to clipboard!', 'success'))
@@ -568,34 +563,26 @@
             });
         
             document.getElementById('download-text').addEventListener('click', () => {
-                try {
-                    const blob = new Blob([generatedText.textContent], { type: 'text/plain' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `generated-text-${new Date().toISOString()}.txt`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showNotification('Text file downloaded!', 'success');
-                } catch (error) {
-                    showNotification('Failed to download text!', 'error');
-                }
+                const blob = new Blob([generatedText.textContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `generated-text-${new Date().toISOString()}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showNotification('Text file downloaded!', 'success');
             });
         
             document.getElementById('download-image').addEventListener('click', () => {
-                try {
-                    const a = document.createElement('a');
-                    a.href = generatedImage.src;
-                    a.download = `generated-image-${new Date().toISOString()}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    showNotification('Image downloaded!', 'success');
-                } catch (error) {
-                    showNotification('Failed to download image!', 'error');
-                }
+                const a = document.createElement('a');
+                a.href = generatedImage.src;
+                a.download = `generated-image-${new Date().toISOString()}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showNotification('Image downloaded!', 'success');
             });
         
             // Image Modal Handling
@@ -616,71 +603,42 @@
                 }
             });
         
-            // API Functions with Error Handling
+            // API Calls
+            async function fetchData(endpoint, prompt) {
+                try {
+                    const response = await fetch(`${API_ENDPOINT}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt })
+                    });
+        
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    return response.json();
+                } catch (error) {
+                    console.error(`API Error: ${error}`);
+                    showNotification(`Failed to fetch data!`, 'error');
+                    throw error;
+                }
+            }
+        
             async function generateText(prompt) {
-                const response = await fetch(`${API_ENDPOINT}/generate-text`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ prompt })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                if (!data.text) {
-                    throw new Error('No text generated');
-                }
-                return data.text;
+                const data = await fetchData('/generate-text', prompt);
+                return data.text || "No text generated.";
             }
         
             async function generateImage(prompt) {
-                const response = await fetch(`${API_ENDPOINT}/generate-image`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ prompt })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                if (!data.image_url) {
-                    throw new Error('No image generated');
-                }
-                return data.image_url;
+                const data = await fetchData('/generate-image', prompt);
+                return data.image_url || "Image generation failed.";
             }
         
             async function generateBoth(prompt) {
-                const response = await fetch(`${API_ENDPOINT}/generate-both`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ prompt })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                if (!data.text || !data.image_url) {
-                    throw new Error('Generation incomplete');
-                }
-                return data;
+                const data = await fetchData('/generate-both', prompt);
+                return {
+                    text: data.text || "No text generated.",
+                    image_url: data.image_url || "Image generation failed."
+                };
             }
         
-            // Main Generation Handler with Enhanced Error Handling
             async function handleGeneration() {
                 const prompt = promptInput.value.trim();
                 if (!prompt) {
@@ -695,44 +653,31 @@
         
                 showLoading(true);
         
-               
-    try {
-        switch (state.currentMode) {
-            case 'text':
-                const text = await generateText(prompt);
-                generatedText.textContent = text;
-                break;
-            case 'image':
-                const imageUrl = await generateImage(prompt);
-                if (generatedImage && imageUrl) {
-                    generatedImage.src = imageUrl;
-                } else {
-                    throw new Error('Image generation failed');
+                try {
+                    let result;
+                    switch (state.currentMode) {
+                        case 'text':
+                            generatedText.textContent = await generateText(prompt);
+                            break;
+                        case 'image':
+                            generatedImage.src = await generateImage(prompt);
+                            break;
+                        case 'both':
+                            result = await generateBoth(prompt);
+                            generatedText.textContent = result.text;
+                            generatedImage.src = result.image_url;
+                            break;
+                        default:
+                            throw new Error('Invalid generation mode');
+                    }
+                    showNotification('Generation completed successfully!', 'success');
+                } catch (error) {
+                    console.error('Generation error:', error);
+                } finally {
+                    showLoading(false);
                 }
-                break;
-            case 'both':
-                const result = await generateBoth(prompt);
-                generatedText.textContent = result.text;
-                if (generatedImage && result.image_url) {
-                    generatedImage.src = result.image_url;
-                } else {
-                    throw new Error('Image generation failed');
-                }
-                break;
-            default:
-                throw new Error('Invalid generation mode');
-        }
-        showNotification('Generation completed successfully!', 'success');
-    } catch (error) {
-        console.error('Generation error:', error);
-        showNotification(
-            error.message || 'An error occurred during generation!', 
-            'error'
-        );
-    } finally {
-        showLoading(false);
-    }
-}
+            }
+        
             // Utility Functions
             function updateUI() {
                 textOutput.style.display = ['text', 'both'].includes(state.currentMode) ? 'block' : 'none';
@@ -741,35 +686,13 @@
         
             function showLoading(show) {
                 loadingOverlay.style.display = show ? 'flex' : 'none';
-                if (show) {
-                    const loadingMessages = [
-                        'Creating something amazing...',
-                        'Generating your content...',
-                        'Processing your request...',
-                        'Almost there...',
-                        'Working on it...'
-                    ];
-                    document.querySelector('.loading-text').textContent = 
-                        loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
-                }
             }
         
             function showNotification(message, type = 'success') {
                 const notification = document.createElement('div');
                 notification.className = `notification ${type}`;
-                
-                const icon = document.createElement('i');
-                icon.className = type === 'success' ? 'fas fa-check-circle' : 
-                                type === 'error' ? 'fas fa-exclamation-circle' : 
-                                'fas fa-info-circle';
-                
-                const text = document.createElement('span');
-                text.textContent = message;
-                
-                notification.appendChild(icon);
-                notification.appendChild(text);
+                notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
                 document.body.appendChild(notification);
-                
                 setTimeout(() => {
                     notification.style.animation = 'slideOut 0.3s ease forwards';
                     setTimeout(() => notification.remove(), 300);
@@ -779,29 +702,11 @@
             function clearOutputs() {
                 promptInput.value = '';
                 generatedText.textContent = '';
-                generatedImage.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+                generatedImage.src = '';
+                imageOutput.style.display = 'none';
                 characterCount.textContent = '0/1000';
                 characterCount.style.color = 'var(--text)';
                 showNotification('Outputs cleared!', 'success');
-            }
-        
-            function savePrompt() {
-                const prompt = promptInput.value.trim();
-                if (!prompt) {
-                    showNotification('Please enter a prompt to save!', 'warning');
-                    return;
-                }
-        
-                const savedPrompts = [...state.savedPrompts];
-                if (savedPrompts.includes(prompt)) {
-                    showNotification('This prompt is already saved!', 'warning');
-                    return;
-                }
-        
-                savedPrompts.push(prompt);
-                localStorage.setItem('savedPrompts', JSON.stringify(savedPrompts));
-                state.savedPrompts = savedPrompts;
-                showNotification('Prompt saved successfully!', 'success');
             }
         
             function closeImageModal() {
@@ -809,7 +714,6 @@
                 document.body.style.overflow = 'auto';
             }
         
-            // Keyboard Support
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && imageModal.style.display === 'flex') {
                     closeImageModal();
@@ -819,9 +723,9 @@
                 }
             });
         
-            // Initial UI update
             updateUI();
         });
         </script>
+        
 </body>
 </html>
