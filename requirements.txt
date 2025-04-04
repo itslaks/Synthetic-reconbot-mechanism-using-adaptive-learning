@@ -26,5 +26,10 @@ pyOpenSSL
 imagehash
 torchvision
 tensorflow
-tf-keras
 deepface
+tf-keras
+soundfile
+whisper
+librosa
+langdetect
+openai
