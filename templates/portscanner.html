@@ -526,7 +526,8 @@
                 <div class="result-card">
                     <h3>Host: ${host}</h3>
                     <p>State: ${hostData.state}</p>
-                    ${hostData.hostnames.length ? `<p>Hostnames: ${hostData.hostnames.join(', ')}</p>` : ''}
+                    ${Array.isArray(hostData.hostnames) && hostData.hostnames.length ? `<p>Hostname: ${hostData.hostnames.map(h => `${h.name}`).join(', ')}</p>` : ''}
+
             `;
 
             if (hostData.os_matches) {
