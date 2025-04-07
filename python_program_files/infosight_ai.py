@@ -52,7 +52,7 @@ class RateLimiter:
 
 class AIGenerator:
     def __init__(self):
-        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Updated to better models
         self.primary_image_model = "stabilityai/stable-diffusion-xl-base-1.0"  # SDXL for higher quality
