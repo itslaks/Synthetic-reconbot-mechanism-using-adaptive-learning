@@ -21,7 +21,7 @@ responses = load_responses()
 
 # Configure Gemini API
 genai.configure(api_key='') #user your own gemini api key
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 def capture_output(func):
     def wrapper(*args, **kwargs):
