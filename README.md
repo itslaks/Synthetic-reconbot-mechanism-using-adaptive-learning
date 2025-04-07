@@ -1,4 +1,4 @@
-# 🤖 Synthetic Reconbot Mechanism using Adaptive Learning
+# 🤖 Synthetic Reconbot Mechanism using Adaptive Learning (INFOSIGHT_V2)
 
 Welcome to the **Synthetic Reconbot Mechanism** project! This repository presents a cutting-edge AI-powered solution that effortlessly integrates several functionalities to transform artificial intelligence and cybersecurity. This project emphasizes real-world applications, while demonstrating how to solve problems practically with Flask and Python.
 
