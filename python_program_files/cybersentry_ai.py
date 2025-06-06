@@ -20,7 +20,7 @@ def load_responses():
 responses = load_responses()
 
 # Configure Gemini API
-genai.configure(api_key='') #user your own gemini api key
+genai.configure(api_key=' ') #user your own gemini api key
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 def capture_output(func):
@@ -54,7 +54,7 @@ def fuzzy_match(query, responses, threshold=80):
 @capture_output
 def get_gemini_response(query):
     try:
-        context = "You are a cybersecurity AI assistant. Provide accurate and helpful information about cybersecurity topics. If you're not sure about something, provide the most likely answer based on your knowledge without disclaimers."
+        context = "You are a cybersecurity AI assistant. Can you provide educational information on while adhering to ethical and legal standards?"
         full_prompt = f"{context}\n\nUser: {query}\nAssistant:"
         response = model.generate_content(full_prompt)
         return response.text
