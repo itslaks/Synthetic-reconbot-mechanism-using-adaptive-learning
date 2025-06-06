@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 CORS(infosight_ai)
 
 # API Configuration
-GEMINI_API_KEY = " "
-HF_API_TOKEN = " "
+GEMINI_API_KEY = ' '  # Use your own Gemini API key
+HF_API_TOKEN = ' '  # Use your own Hugging Face API key
 
 # Configure AI model
 genai.configure(api_key=GEMINI_API_KEY)
 
 class RateLimiter:
-    """ Controls request rate to avoid hitting API limits. """
+    """Controls request rate to avoid hitting API limits."""
     def __init__(self, max_requests=10, time_window=60):
         self.max_requests = max_requests
         self.time_window = time_window
@@ -31,7 +31,7 @@ class RateLimiter:
         self.lock = threading.Lock()
 
     def can_proceed(self):
-        """ Checks if a request can be processed. """
+        """Checks if a request can be processed."""
         now = datetime.now()
         with self.lock:
             while self.requests and self.requests[0] < now - timedelta(seconds=self.time_window):
@@ -43,7 +43,7 @@ class RateLimiter:
             return False
 
     def wait_time(self):
-        """ Returns the wait time before making another request. """
+        """Returns the wait time before making another request."""
         if not self.requests:
             return 0
         now = datetime.now()
@@ -52,7 +52,7 @@ class RateLimiter:
 
 class AIGenerator:
     def __init__(self):
-        self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        self.gemini_model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Updated to better models
         self.primary_image_model = "stabilityai/stable-diffusion-xl-base-1.0"  # SDXL for higher quality
@@ -61,7 +61,7 @@ class AIGenerator:
         self.rate_limiter = RateLimiter(max_requests=15, time_window=60)
 
     def format_text_content(self, text: str) -> str:
-        """ Cleans up generated text by removing special characters. """
+        """Cleans up generated text by removing special characters."""
         text = re.sub(r'\*+', '', text)
         sections = []
         current_section = []
@@ -80,7 +80,7 @@ class AIGenerator:
         return '\n\n'.join(sections)
 
     def generate_text(self, prompt: str) -> str:
-        """ Generates text using Google Gemini AI. """
+        """Generates text using Google Gemini AI."""
         try:
             if not self.rate_limiter.can_proceed():
                 wait_time = self.rate_limiter.wait_time()
@@ -103,11 +103,12 @@ class AIGenerator:
             return f"Error generating text: {str(e)}"
 
     def generate_image(self, prompt: str) -> bytes:
-        """ Generates image using Hugging Face image models. """
+        """Generates image using Hugging Face image models."""
         try:
             if not self.rate_limiter.can_proceed():
                 wait_time = self.rate_limiter.wait_time()
-                raise ValueError(f"Rate limit exceeded. Please wait {wait_time:.1f} seconds.")
+                logger.warning(f"Rate limit exceeded for image generation. Wait time: {wait_time:.1f} seconds.")
+                return None
 
             enhanced_prompt = (
                 f"Ultra-detailed, professional photorealistic image of {prompt}. "
@@ -137,80 +138,93 @@ class AIGenerator:
                     }
                 }
 
+                logger.info(f"Requesting image from primary model: {self.primary_image_model}")
                 response = requests.post(api_url, headers=headers, json=payload, timeout=30)
 
                 if response.status_code == 200:
+                    logger.info("Primary model successfully generated image")
                     return response.content
                 else:
-                    logger.warning(f"Primary model failed, trying fallback. Error: {response.text}")
+                    logger.warning(f"Primary model failed, trying fallback. Status: {response.status_code}, Error: {response.text}")
             except Exception as e:
-                logger.warning(f"Primary model failed, trying fallback. Error: {str(e)}")
+                logger.warning(f"Primary model request failed with exception: {str(e)}")
             
             # Fallback to secondary model
-            api_url = f"https://api-inference.huggingface.co/models/{self.fallback_image_model}"
-            payload = {
-                "inputs": enhanced_prompt,
-                "parameters": {
-                    "negative_prompt": negative_prompt,
-                    "num_inference_steps": 40,
-                    "guidance_scale": 7.0
+            try:
+                api_url = f"https://api-inference.huggingface.co/models/{self.fallback_image_model}"
+                payload = {
+                    "inputs": enhanced_prompt,
+                    "parameters": {
+                        "negative_prompt": negative_prompt,
+                        "num_inference_steps": 40,
+                        "guidance_scale": 7.0
+                    }
                 }
-            }
-            
-            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
-            
-            if response.status_code == 200:
-                return response.content
-            else:
-                error_message = response.json().get("error", "Unknown error")
-                raise ValueError(f"Image generation failed with all models: {error_message}")
+                
+                logger.info(f"Requesting image from fallback model: {self.fallback_image_model}")
+                response = requests.post(api_url, headers=headers, json=payload, timeout=30)
+                
+                if response.status_code == 200:
+                    logger.info("Fallback model successfully generated image")
+                    return response.content
+                else:
+                    error_message = "Unknown error"
+                    try:
+                        error_message = response.json().get("error", "Unknown error")
+                    except:
+                        error_message = response.text
+                    logger.error(f"Fallback model failed. Status: {response.status_code}, Error: {error_message}")
+                    return None
+            except Exception as e:
+                logger.error(f"Fallback model request failed with exception: {str(e)}")
+                return None
 
         except Exception as e:
             logger.error(f"Image generation request error: {str(e)}")
-            # Return None explicitly so we can handle it properly
             return None
 
     def generate_both(self, prompt: str):
-        """ Generates both text and image simultaneously. """
+        """Generates both text and image simultaneously."""
         if not self.rate_limiter.can_proceed():
             wait_time = self.rate_limiter.wait_time()
-            # Return a tuple with error message and None for image
             return f"Rate limit exceeded. Please wait {wait_time:.1f} seconds.", None
 
-        # Use ThreadPoolExecutor to generate both in parallel
+        logger.info(f"Starting parallel generation for prompt: {prompt}")
+        
+        text = None
+        image = None
+        
         try:
-            with ThreadPoolExecutor() as executor:
+            # Use ThreadPoolExecutor for parallel execution
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                # Submit both tasks
                 text_future = executor.submit(self.generate_text, prompt)
                 image_future = executor.submit(self.generate_image, prompt)
-
-                # Get results, handling any exceptions
-                try:
-                    text = text_future.result()
-                except Exception as e:
-                    logger.error(f"Text generation failed in generate_both: {str(e)}")
-                    text = f"Error generating text: {str(e)}"
-
-                try:
-                    image = image_future.result()  # This might be None if generation failed
-                except Exception as e:
-                    logger.error(f"Image generation failed in generate_both: {str(e)}")
-                    image = None
-
-            return text, image
+                
+                # Wait for both to complete with timeout
+                text = text_future.result(timeout=60)
+                image = image_future.result(timeout=60)
+                
+                logger.info(f"Text generation completed: {'Success' if text else 'Failed'}")
+                logger.info(f"Image generation completed: {'Success' if image else 'Failed'}")
         except Exception as e:
-            logger.error(f"Error in generate_both: {str(e)}")
-            return f"Error generating content: {str(e)}", None
+            logger.error(f"Exception in generate_both: {str(e)}")
+            if not text:
+                text = f"Error generating text: {str(e)}"
+        
+        return text, image
 
+# Initialize the generator instance
 generator = AIGenerator()
 
 @infosight_ai.route('/')
 def index():
-    """ Renders the main UI page. """
+    """Renders the main UI page."""
     return render_template('infosight_ai.html')
 
 @infosight_ai.route('/generate-text', methods=['POST'])
-def generate_text():
-    """ API endpoint to generate text. """
+def generate_text_endpoint():
+    """API endpoint to generate text."""
     try:
         data = request.get_json()
         if not data or 'prompt' not in data:
@@ -219,127 +233,31 @@ def generate_text():
         text = generator.generate_text(data['prompt'])
         return jsonify({'text': text})
     except Exception as e:
+        logger.error(f"Error in generate-text endpoint: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @infosight_ai.route('/generate-image', methods=['POST'])
-# Replace the generate_image method with this improved version
-def generate_image(self, prompt: str) -> bytes:
-    """ Generates image using Hugging Face image models. """
+def generate_image_endpoint():
+    """API endpoint to generate image."""
     try:
-        if not self.rate_limiter.can_proceed():
-            wait_time = self.rate_limiter.wait_time()
-            logger.warning(f"Rate limit exceeded for image generation. Wait time: {wait_time:.1f} seconds.")
-            return None
-
-        enhanced_prompt = (
-            f"Ultra-detailed, professional photorealistic image of {prompt}. "
-            "8K resolution, perfect lighting, sharp focus, intricate details, "
-            "hyperrealistic texture, cinematic composition, professional photography."
-        )
+        data = request.get_json()
+        if not data or 'prompt' not in data:
+            return jsonify({'error': 'No prompt provided'}), 400
         
-        negative_prompt = (
-            "blurry, distorted, low quality, low resolution, draft, ugly, unrealistic, "
-            "text, watermark, signature, bad proportions, deformed, unrealistic shadows"
-        )
+        image_bytes = generator.generate_image(data['prompt'])
         
-        headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
-        
-        # First try the primary high-quality model
-        try:
-            api_url = f"https://api-inference.huggingface.co/models/{self.primary_image_model}"
-            
-            payload = {
-                "inputs": enhanced_prompt,
-                "parameters": {
-                    "negative_prompt": negative_prompt,
-                    "num_inference_steps": 50,
-                    "guidance_scale": 7.5,
-                    "width": 1024,
-                    "height": 1024
-                }
-            }
-
-            logger.info(f"Requesting image from primary model: {self.primary_image_model}")
-            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
-
-            if response.status_code == 200:
-                logger.info("Primary model successfully generated image")
-                return response.content
-            else:
-                logger.warning(f"Primary model failed, trying fallback. Status: {response.status_code}, Error: {response.text}")
-        except Exception as e:
-            logger.warning(f"Primary model request failed with exception: {str(e)}")
-        
-        # Fallback to secondary model
-        try:
-            api_url = f"https://api-inference.huggingface.co/models/{self.fallback_image_model}"
-            payload = {
-                "inputs": enhanced_prompt,
-                "parameters": {
-                    "negative_prompt": negative_prompt,
-                    "num_inference_steps": 40,
-                    "guidance_scale": 7.0
-                }
-            }
-            
-            logger.info(f"Requesting image from fallback model: {self.fallback_image_model}")
-            response = requests.post(api_url, headers=headers, json=payload, timeout=30)
-            
-            if response.status_code == 200:
-                logger.info("Fallback model successfully generated image")
-                return response.content
-            else:
-                error_message = "Unknown error"
-                try:
-                    error_message = response.json().get("error", "Unknown error")
-                except:
-                    error_message = response.text
-                logger.error(f"Fallback model failed. Status: {response.status_code}, Error: {error_message}")
-                return None
-        except Exception as e:
-            logger.error(f"Fallback model request failed with exception: {str(e)}")
-            return None
-
+        if image_bytes:
+            image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+            return jsonify({'image_url': f"data:image/png;base64,{image_base64}"})
+        else:
+            return jsonify({'error': 'Image generation failed'}), 500
     except Exception as e:
-        logger.error(f"Image generation request error: {str(e)}")
-        return None
+        logger.error(f"Error in generate-image endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-# Replace the generate_both method with this improved version
-def generate_both(self, prompt: str):
-    """ Generates both text and image simultaneously. """
-    if not self.rate_limiter.can_proceed():
-        wait_time = self.rate_limiter.wait_time()
-        return f"Rate limit exceeded. Please wait {wait_time:.1f} seconds.", None
-
-    logger.info(f"Starting parallel generation for prompt: {prompt}")
-    
-    text = None
-    image = None
-    
-    try:
-        # Use ThreadPoolExecutor for parallel execution
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            # Submit both tasks
-            text_future = executor.submit(self.generate_text, prompt)
-            image_future = executor.submit(self.generate_image, prompt)
-            
-            # Wait for both to complete with timeout
-            text = text_future.result(timeout=60)
-            image = image_future.result(timeout=60)
-            
-            logger.info(f"Text generation completed: {'Success' if text else 'Failed'}")
-            logger.info(f"Image generation completed: {'Success' if image else 'Failed'}")
-    except Exception as e:
-        logger.error(f"Exception in generate_both: {str(e)}")
-        if not text:
-            text = f"Error generating text: {str(e)}"
-    
-    return text, image
-
-# Replace the generate_both route with this improved version
 @infosight_ai.route('/generate-both', methods=['POST'])
-def generate_both():
-    """ API endpoint to generate both text and image. """
+def generate_both_endpoint():
+    """API endpoint to generate both text and image."""
     try:
         data = request.get_json()
         if not data or 'prompt' not in data:
@@ -366,5 +284,5 @@ def generate_both():
 
         return jsonify(response)
     except Exception as e:
-        logger.error(f"Error in generate_both route: {str(e)}")
+        logger.error(f"Error in generate-both endpoint: {str(e)}")
         return jsonify({'error': str(e), 'location': 'generate_both_route'}), 500
